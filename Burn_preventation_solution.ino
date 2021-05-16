@@ -145,6 +145,7 @@ void readTempValues() {
     Serial.print((int)tempValues1[i]);
     Serial.print(" ");
 
+    
   }
   Serial.println(" ");
   Serial.println(" ");
