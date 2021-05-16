@@ -46,8 +46,16 @@ void setup() {
 
 void loop(void) {
   readTempValues();
-  delay(2000);
+  del = changedelay();
+  delay(del);
 }
+
+int changedelay(){
+  int deltmp  = 2000;
+
+  return deltmp;
+}
+
 
 void readTempValues() {
   for (byte x = 0 ; x < 2 ; x++) 
