@@ -4,8 +4,6 @@
 #include "MLX90640_I2C_Driver.h"
 #include <avr/pgmspace.h>
 
-
-
 #define EMMISIVITY 0.95
 #define TA_SHIFT 8 
 
