@@ -120,7 +120,7 @@ void readTempValues() {
     }
     Serial.print((int)tempValues1[i]);
     Serial.print(" ");
->>>>>>> 55d2488b13a1025c1af6117a1908243c1b42ecd5
+    
   }
   Serial.println(" ");
   Serial.println(" ");
