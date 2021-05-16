@@ -144,8 +144,11 @@ void readTempValues() {
     }
     Serial.print((int)tempValues1[i]);
     Serial.print(" ");
+<<<<<<< HEAD
 
+=======
     
+>>>>>>> b6571b9ed7e8b2352762d9f3a7ab8532628ca8d0
   }
   Serial.println(" ");
   Serial.println(" ");
