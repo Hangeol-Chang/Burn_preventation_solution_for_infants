@@ -58,6 +58,7 @@ void readTempValues() {
     int status2 = MLX90640_GetFrameData(MLX90640_address2[0], mlx90640Frame2);
     if (status1 < 0 || status2<0 )
     { 
+      도윤씨 안녕
       Serial.print("GetFrame Error: ");
       Serial.println(status1+status2);
     }
