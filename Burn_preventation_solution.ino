@@ -50,7 +50,7 @@ void loop(void) {
 }
 
 int changedelay(){
-  int deltmp  = 100;
+  int deltmp  = 500;
 
   return deltmp;
 }
@@ -84,6 +84,7 @@ void readTempValues() {
   int B1 = 0;
   int A1save = 0;
   int B1save = 0;
+<<<<<<< HEAD
   int temp = 30;
   int tempValues1_re[768];  
   Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera1===============================");
@@ -99,8 +100,51 @@ void readTempValues() {
     if (maxval<tempValues1[i]){
 
       maxval=tempValues1[i];
+=======
+  int temp = 35;
+  
+  Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera1===============================");
+  for(int i = 0 ; i < 768 ; i++){
+    if(tempValues1[i] >= temp) {
+      tempValues1[i] = 1;
+    }else{
+      tempValues1[i] = 0;
+    }
+  }
+
+  for (int i = 0; i < 768; i++) {    
+    
+    if (((i % 32) == 0) && (i != 0)) {
+      Serial.println(" ");    //줄넘김
+
+    }
+    Serial.print((int)tempValues1[i]);
+    Serial.print(" ");
+>>>>>>> 55d2488b13a1025c1af6117a1908243c1b42ecd5
+  }
+  Serial.println(" ");
+  Serial.println(" ");
+  
+  for(int i = 0 ; i < 768 ; i++){
+    if(tempValues1[i] == 1) {
+      if ( i % 32 >= 1  && tempValues1[i-1] == 0) { tempValues1[i-1] = 2; }
+      if ( i % 32 <= 30  && tempValues1[i+1] == 0) { tempValues1[i+1] = 2; }
+
+      if( i >= 32 && i <= 735 ) {
+        if (tempValues1[i-32] == 0) { tempValues1[i-32] = 2; }
+        if (tempValues1[i+32] == 0) { tempValues1[i+32] = 2; }
+      }
+    }
   }
   
+  for (int i = 0; i < 768; i++) {    
+    
+    if (((i % 32) == 0) && (i != 0)) {
+      Serial.println(" ");    //줄넘김
+
+    }
+    Serial.print((int)tempValues1[i]);
+    Serial.print(" ");
   }
 
   for (int i = 0; i< 768; i++) {
