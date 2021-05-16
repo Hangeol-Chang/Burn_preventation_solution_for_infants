@@ -22,7 +22,7 @@ void setup() {
   Wire.beginTransmission((uint8_t)MLX90640_address2[0]);
   if (  Wire.endTransmission() != 0) {
     Serial.println("MLX90640 not detected at default I2C address. Starting scan the device addr...");
-    Device_Scan();
+//    Device_Scan();
 //    while(1);
   }
   else {
@@ -50,7 +50,7 @@ void loop(void) {
 }
 
 int changedelay(){
-  int deltmp  = 500;
+  int deltmp  = 2000;
 
   return deltmp;
 }
@@ -84,26 +84,50 @@ void readTempValues() {
   int B1 = 0;
   int A1save = 0;
   int B1save = 0;
-<<<<<<< HEAD
-  int temp = 30;
-  int tempValues1_re[768];  
-  Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera1===============================");
-  
-  int maxval=tempValues1[0];
-  for (int i = 0; i < 768; i++) {    
-    
-    if(tempValues1[i] >= 30) {
-      tempValues1_re[i]=1000;
-    }else{
-      tempValues1_re[i]=0;
-    }
-    if (maxval<tempValues1[i]){
-
-      maxval=tempValues1[i];
-=======
   int temp = 35;
   
   Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera1===============================");
+
+  int maxval=tempValues1[0];
+  for (int i = 0; i < 768; i++) {
+    
+    if (((i % 32) == 0) && (i != 0)) {
+      Serial.println(" ");
+    }
+    Serial.print((int)tempValues1[i]);
+    Serial.print(" ");
+    if (maxval<tempValues1[i]){
+
+      maxval=tempValues1[i];
+  }
+  } 
+  Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera1===============================");
+
+  //Serial.println("Max Value is : ");
+  //Serial.print(maxval);
+
+
+  int A2 = 0;
+  int B2 = 0;
+  int A2save = 0;
+  int B2save = 0;
+  
+  Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera2===============================");
+  maxval=tempValues2[0];
+  for (int i = 0; i < 768; i++) {
+    
+    if (((i % 32) == 0) && (i != 0)) {
+      Serial.println(" ");
+    }
+    Serial.print((int)tempValues2[i]);
+    Serial.print(" ");
+    if (maxval<tempValues2[i]){
+
+      maxval=tempValues2[i];
+  }
+  }
+  Serial.println(" ");
+  
   for(int i = 0 ; i < 768 ; i++){
     if(tempValues1[i] >= temp) {
       tempValues1[i] = 1;
@@ -120,7 +144,7 @@ void readTempValues() {
     }
     Serial.print((int)tempValues1[i]);
     Serial.print(" ");
->>>>>>> 55d2488b13a1025c1af6117a1908243c1b42ecd5
+
   }
   Serial.println(" ");
   Serial.println(" ");
@@ -146,69 +170,17 @@ void readTempValues() {
     Serial.print((int)tempValues1[i]);
     Serial.print(" ");
   }
-
-  for (int i = 0; i< 768; i++) {
-    if((int)tempValues1[i] >= temp) {
-      A1 ++;
-    if ( i % 32 >= 1  && tempValues1[i-1] < temp) { tempValues1_re[i-1]=9999; }
-    if ( i % 32 <= 30  && tempValues1[i+1] < temp) { tempValues1_re[i+1]=9999; }
-
-    if( i >= 32|| i <= 735 ) {
-      if (tempValues1[i-32] < temp) { tempValues1_re[i-32]=9999; }
-      if (tempValues1[i+32] < temp) { tempValues1_re[i+32]=9999; }
-    }
-    }
-  }
-  for (int i = 0; i < 768; i++) {
-    
-    if (((i % 32) == 0) && (i != 0)) {
-      Serial.println(" ");
-    }
-    Serial.print((int)tempValues1_re[i]);
-    Serial.print(" ");
-    if (maxval<tempValues1_re[i]){
-
-      maxval=tempValues1[i];
-  }
-  }
-
-  
+ 
   Serial.println(' ');
   Serial.println(A1);
   Serial.println(B1);
   
-
    
-  
-  Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera1===============================");
-
-  //Serial.println("Max Value is : ");
-  //Serial.print(maxval);
-
-
-  int A2 = 0;
-  int B2 = 0;
-  int A2save = 0;
-  int B2save = 0;
-  
-  Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera2===============================");
-  maxval=tempValues2[0];
-  for (int i = 0; i < 768; i++) {
-    
-    if (((i % 32) == 0) && (i != 0)) {
-      Serial.println(" ");
-    }
-    Serial.print((int)tempValues2[i]);
-    Serial.print(" ");
-    if (maxval<tempValues2[i]){
-
-      maxval=tempValues2[i];
-  }
-  }   
   Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera2===============================");
   Serial.println("Max Value is : ");
   Serial.print(maxval); 
 }
+ 
 
 void Device_Scan() {
   byte error, address;
