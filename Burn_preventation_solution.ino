@@ -204,11 +204,11 @@ void readTempValues() {
     else{
       for (int i = 0; i < 768; i++){
         midmat1[i]=tempValues1[i]-tempValues1_old[i];
-        if (midmat1[i]==-4) {Atob1++;}
-        if (midmat1[i]==4) {btoA1++;}
+        if (midmat1[i]==4) {Atob1++;}
+        if (midmat1[i]==-4) {btoA1++;}
         midmat2[i]=tempValues2[i]-tempValues2_old[i];
-        if (midmat2[i]==-4) {Atob2++;}
-        if (midmat2[i]==4) {btoA2++;}
+        if (midmat2[i]==4) {Atob2++;}
+        if (midmat2[i]==-4) {btoA2++;}
       } 
       
       float epsilon1=(btoA1)/(Atob1+1);
