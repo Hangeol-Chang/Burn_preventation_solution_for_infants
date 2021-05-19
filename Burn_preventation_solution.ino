@@ -274,11 +274,13 @@ values readTempValues() {
   
    
   Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera2===============================");
+  
   Serial.println("Max Value is : ");
   Serial.print(maxval); 
 
   return Ab;
   
+
 }
 
  
