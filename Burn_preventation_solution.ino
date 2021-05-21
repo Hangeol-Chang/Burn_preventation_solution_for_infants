@@ -20,10 +20,6 @@ int saveb1 = 0;
 int saveA2 = 0;
 int saveb2 = 0;
 
-int initval=0;
-float tempValues1_old[768];
-float tempValues2_old[768]; 
-
 void setup() {
     Serial.begin(115200);
     Wire.begin();
@@ -67,10 +63,6 @@ int changedelay() {
 
 
 void readTempValues() {
-    float midmat1[768];
-    float midmat2[768];
-    float Atob1=0; float Atob2=0; 
-    float btoA1=0; float btoA2=0;
     for (byte x = 0; x < 2; x++)
     {
         uint16_t mlx90640Frame1[834];
@@ -101,9 +93,7 @@ void readTempValues() {
 
     int countA1 = 0;
     int countb1 = 0;
-
-
-
+    
     int maxval = tempValues1[0];
 
     for (int i = 0; i < 768; i++) {
@@ -120,31 +110,44 @@ void readTempValues() {
         }
 
         if (tempValues1[i] >= temp) {
-            tempValues1[i] = 1;
+            tempValues1[i] = 0;
             countA1++;
         }
-        else { tempValues1[i] = 0; }
+        else { tempValues1[i] = 1; }
     }
 
     Serial.println("Max Value is : " && maxval);
-  
-    for(int i = 0 ; i < 768 ; i++){
-    if(tempValues1[i] == 1) {
-      if ( i % 32 >= 1  && tempValues1[i-1] == 0) { tempValues1[i-1] = 5; } 
-      if ( i % 32 == 0  && tempValues1[i+1] == 0) { tempValues1[i+1] = 5; } 
-      
-      if ( i % 32 <= 30  && tempValues1[i+1] == 0) { tempValues1[i+1] = 5;}
-      if ( i % 32 == 31  && tempValues1[i-1] == 0) { tempValues1[i+1] = 5;}
 
-      if( i >= 32 && i <= 735 ) {
-        if (tempValues1[i-32] == 0) { tempValues1[i-32] = 5; }
-        if (tempValues1[i+32] == 0) { tempValues1[i+32] = 5; }
-      }
-      if( i < 32) {if (tempValues1[i+32] == 0) { tempValues1[i+32] = 5; }}
-      if( i > 735) {if (tempValues1[i-32] == 0) { tempValues1[i-32] = 5; }}
-      }
+    int array[26][34] = { 1, };
+
+    for (int i = 1; i < 25; i++) {
+        for (int j = 1; j < 33; j++) {
+            array[i][j] = tempValues1[32 * (i - 1) + (j - 1)];
+        }
     }
-    
+
+    for (int i = 1; i < 25; i++) {
+        for (int j = 1; j < 33; j++) {
+            if (array[i][j] == 1 && array[i - 1][j] * array[i + 1][j] * array[i][j - 1] * array[i][j + 1] == 0) {
+                array[i][j] = 2;
+                countb1++;
+            }
+            Serial.print(array[i][j]);
+        }
+        Serial.println(" ");
+    }
+
+    float det1 = (countA1 - saveb1) / (countb1 - saveA1 + 1);
+
+    if (det1 > 2) {
+        Serial.println("Warning!");
+    }
+
+    saveA1 = countA1;
+    saveb1 = countb1;
+
+
+
 
 
 
@@ -169,60 +172,42 @@ void readTempValues() {
         }
 
         if (tempValues2[i] >= temp) {
-            tempValues2[i] = 1;
+            tempValues2[i] = 0;
             countA2++;
         }
-        else { tempValues2[i] = 0; }
+        else { tempValues2[i] = 1; }
     }
 
     Serial.println("Max Value is : " && maxval);
 
-    for(int i = 0 ; i < 768 ; i++){
-    if(tempValues2[i] == 1) {
-      if ( i % 32 >= 1  && tempValues2[i-1] == 0) { tempValues2[i-1] = 5; } 
-      if ( i % 32 == 0  && tempValues2[i+1] == 0) { tempValues2[i+1] = 5; } 
-      
-      if ( i % 32 <= 30  && tempValues2[i+1] == 0) { tempValues2[i+1] = 5;}
-      if ( i % 32 == 31  && tempValues2[i-1] == 0) { tempValues2[i+1] = 5;}
+    array[26][34] = { 1, };
 
-      if( i >= 32 && i <= 735 ) {
-        if (tempValues2[i-32] == 0) { tempValues2[i-32] = 5; }
-        if (tempValues2[i+32] == 0) { tempValues2[i+32] = 5; }
-      }
-      if( i < 32) {if (tempValues2[i+32] == 0) { tempValues2[i+32] = 5; }}
-      if( i > 735) {if (tempValues2[i-32] == 0) { tempValues2[i-32] = 5; }}
-      }
+    for (int i = 1; i < 25; i++) {
+        for (int j = 1; j < 33; j++) {
+            array[i][j] = tempValues2[32 * (i - 1) + (j - 1)];
+        }
     }
-    if (initval==0){
-      for (int i=0; i<768; i++){
 
-        tempValues1_old[i]=tempValues1[i];
-        tempValues2_old[i]=tempValues2[i];
-      }
-      initval++;
+    for (int i = 1; i < 25; i++) {
+        for (int j = 1; j < 33; j++) {
+            if (array[i][j] == 1 && array[i - 1][j] * array[i + 1][j] * array[i][j - 1] * array[i][j + 1] == 0) {
+                array[i][j] = 2;
+                countb2++;
+            }
+            Serial.print(array[i][j]);
+        }
+        Serial.println(" ");
     }
-    else{
-      for (int i = 0; i < 768; i++){
-        midmat1[i]=tempValues1[i]-tempValues1_old[i];
-        if (midmat1[i]==4) {Atob1++;}
-        if (midmat1[i]==-4) {btoA1++;}
-        midmat2[i]=tempValues2[i]-tempValues2_old[i];
-        if (midmat2[i]==4) {Atob2++;}
-        if (midmat2[i]==-4) {btoA2++;}
-      } 
-      
-      float epsilon1=(btoA1)/(Atob1+1);
-      float epsilon2=(btoA2)/(Atob2+1);
-      
-      if (epsilon1 >=2 || epsilon2 >=2) {Serial.print("alert!");}
-      
-      for (int i = 0; i < 768; i++){
-        tempValues1_old[i]=tempValues1[i];
-        tempValues2_old[i]=tempValues2[i];
-      }
+
+    float det2 = (countA2 - saveb2) / (countb2 - saveA2 + 1);
+
+    if (det2 > 2) {
+        Serial.println("Warning!");
     }
+
+    saveA2 = countA2;
+    saveb2 = countb2;
 }
-    
 
 
 void Device_Scan() {
