@@ -17,27 +17,25 @@ const byte MLX90640_address1[] PROGMEM = { 0x33 }; //Default 7-bit unshifted add
 
 static float tempValues1[24 * 32];
 
-int num = 0;
-
 float epsilon1_1 = 0;
 float epsilon1_2 = 0;
 
-
 //=======================================wifi
-bool danger = false;
+int stat = 0;
 bool ing = false;
-bool tmpdanger = false;
+
 const char* ssid = "AndroidHotspot1867";       // 공백없이 정확히 넣어야 해요.
 const char* password = "01051781867";   // 공백없이 정확히 넣어야 해요.
-
-String s;
-//=======================================wifi
 
 int status = WL_IDLE_STATUS; 
 WiFiServer server(80); 
 WiFiClient client;
+//=======================================wifi
 
-while (status != WL_CONNECTED) { 
+void setup() {
+    Serial.begin(115200);
+    //=================================================wifi
+    while (status != WL_CONNECTED) { 
       status = WiFi.begin(ssid, password); 
       delay(1000); 
       
@@ -49,18 +47,10 @@ while (status != WL_CONNECTED) {
     while (!client) { 
       client = server.available(); 
     }
-    
-void setup() {
-    Serial.begin(115200);
-    //=================================================wifi
-    
   
     // 클라이언트로부터 데이터 수신을 기다림
     Serial.println("new client"); 
-    //while(!client.available()){ 
-    //  delay(1); 
-    //}
-    
+    //while(!client.available()){ delay(1); }
     //=================================================wifi
        
     Wire.begin();
@@ -86,43 +76,58 @@ void setup() {
     Wire.setClock(800000);
 }
 
-int del;
 void loop(void) {
-    danger = readTempValues();
-    num++;
-
-    //=========================================wifi
-    client.flush();
-    //if (danger && !ing) {
-    if(true){
-      ing = true;
+  switch (stat){
+    case 0:         //위험판단 실행
+      readTempValues();
+      break;
+      
+    case 1:         //위험신호 전달(200)
+      client.flush();
       client.print(
             "HTTP/1.1 200 OK\r\n"
             "Content-Type: text/html\r\n"
             "Connection: close\r\n"  // the connection will be closed after completion of the response
             "Refresh: 20\r\n"        // refresh the page automatically every 20 sec
             "\r\n");
-      Serial.println("시발왜안돼");
+      Serial.println("되냐");
       delay(2); 
+
+      ing = true;
+      stat = 0;
+      break;
       
-    }
-    
-    //=========================================wifi
+    case 2:         //안전신호 전달(0)
+      client.flush();
+      client.print(
+            "HTTP/1.1 0 OK\r\n"
+            "Content-Type: text/html\r\n"
+            "Connection: close\r\n"  // the connection will be closed after completion of the response
+            "Refresh: 20\r\n"        // refresh the page automatically every 20 sec
+            "\r\n");
+      Serial.println("되냐");
+      delay(2); 
+
+      ing = false;
+      stat = 0;
+      
+      break;
+      
+    default:
+      break;
+  }
 
 }
+//int8_t
 
-bool readTempValues() {
+void readTempValues() {
     int save1[24][32];
-    int n = 0;
-    if(num != 0){
-      for(int i = 0; i < 24; i++){    //이전 루프 012배열을 save배열에 저장(메모리 때문에 일차원배열에 저장)
-        for(int j = 0; j < 32; j++){
-         save1[i][j] = tempValues1[n];
-         n++;
+
+    for(int i = 0; i < 24; i++){    //이전 루프 012배열을 save배열에 저장(메모리 때문에 일차원배열에 저장)
+      for(int j = 0; j < 32; j++){
+       save1[i][j] = tempValues1[i * 24 + j];
       }
     }
-    }
-
   
     for (byte x = 0; x < 2; x++)
     {
@@ -141,7 +146,6 @@ bool readTempValues() {
         MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1);
     }
 
-
     int temp = 35;
     int Atob = 0;
     int btoA = 0;
@@ -150,24 +154,17 @@ bool readTempValues() {
 
     epsilon1_2 = epsilon1_1;
 
-
     //Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera1===============================");
-
     //Serial.println("Temperature array");
 
     for (int i = 0; i < 768; i++) {
-
-        if (((i % 32) == 0) && (i != 0)) {
-            //Serial.println(" ");
-        }
-
-        //Serial.print((int)tempValues1[i]);     //온도배열 출력
-        //Serial.print(" ");
-
-        if (tempValues1[i] >= temp) {       //기준온도 이상이면 0으로, 이하면 1로 변환
-            tempValues1[i] = 0;
-        }
-        else { tempValues1[i] = 1; }
+        //==============================================온도배열 출력
+        //if (((i % 32) == 0) && (i != 0)) { Serial.println(" "); }
+        //Serial.print( (int)tempValues1[i], " " );
+        //==============================================온도배열 출력
+        
+        if (tempValues1[i] >= temp) { tempValues1[i] = 0; }
+        else                        { tempValues1[i] = 1; }
     }
     //Serial.println(" ");
     
@@ -196,57 +193,60 @@ bool readTempValues() {
         //Serial.println(" ");
     }
     //Serial.println(" ");
+    //Serial.println("Array - Save");
 
-    if(num!=0) {        //배열 위치대로 계산(나중배열 - 이전배열)
-        //Serial.println("Array - Save");
-        
-        for (int i = 0; i < 24; i++) {
-            for (int j = 0; j < 32; j++) {
-              cal[i][j] = arr[i+1][j+1] - save1[i][j];
-              if(cal[i][j]>=0){
-                //Serial.print(" ");
-                //Serial.print(cal[i][j]);
-                //Serial.print(" ");
-              }
-              else{
-                //Serial.print(cal[i][j]);
-                //Serial.print(" ");
-              }
-              
-                if (cal[i][j] == -2) {   //b->A와 A->b 개수 카운트
-                    btoA++;
-                }
-                else if (cal[i][j] == 2) {
-                    Atob++;
-                }
-            }
-            //Serial.println(" ");
-        }
-        
-        epsilon1_1 = btoA / (Atob + 1)*1.0;
-        Serial.print("Epsilon1 is : ");
-        Serial.println(epsilon1_1);
-        Serial.print("Epsilon2 is : ");
-        Serial.println(epsilon1_2);
-        Serial.println("");
+    for (int i = 0; i < 24; i++) {    //배열 위치대로 계산(나중배열 - 이전배열)
+      for (int j = 0; j < 32; j++) {
+        cal[i][j] = arr[i+1][j+1] - save1[i][j];
+          if(cal[i][j]>=0){
+            //Serial.print(" ");
+            //Serial.print(cal[i][j]);
+            //Serial.print(" ");
+          }
+          else{
+            //Serial.print(cal[i][j]);
+            //Serial.print(" ");
+          }          
+          if (cal[i][j] == -2) {   //b->A와 A->b 개수 카운트
+            btoA++;
+          }
+          else if (cal[i][j] == 2) {
+            Atob++;
+          }
+      }
+    //Serial.println(" ");
     }
-        if(num >= 2){
-          if (epsilon1_1 >= 2 && epsilon1_2 >= 2) {
-            Serial.println("Warning!");
-            tmpdanger = true;
-          }else if ( tmpdanger == true) tmpdanger = false;
-        }
     
+    epsilon1_1 = btoA / (Atob + 1)*1.0;
 
-    n = 0;
-    for (int i = 0; i < 24; i++) {     //현재 0과1 배열을 일차원 배열에 저장(메모리 때문에)
-        for (int j = 0; j < 32; j++) {
-            tempValues1[n] = arr[i + 1][j + 1];
-            n++;
+    //============================================입실론 디버깅
+    Serial.print("Epsilon1 is : ");
+    Serial.println(epsilon1_1);
+    Serial.print("Epsilon2 is : ");
+    Serial.println(epsilon1_2);
+    Serial.println("");
+    //============================================입실론 디버깅
+    
+    switch (ing) {
+      case false :
+        if (epsilon1_1 >= 1 && epsilon1_2 >= 1) {
+          Serial.println("Warning!");
+          stat = 1;
         }
+        break;
+      case true :
+        if(epsilon1_1 < 1 && epsilon1_2 < 1) {
+        Serial.println("Dager disappear");
+        stat = 2;
+        }
+        break;
+        
+    for (int i = 0; i < 24; i++) {     //현재 0과1 배열을 일차원 배열에 저장(메모리 때문에)
+      for (int j = 0; j < 32; j++) {
+          tempValues1[i * 24 + j] = arr[i + 1][j + 1];
+      }
     }
-
-    return tmpdanger;
+  }
 }
 
 
