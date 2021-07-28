@@ -261,7 +261,7 @@ int MLX90640_GetCurMode(uint8_t slaveAddr)
 
 //------------------------------------------------------------------------------
 
-void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, float *result)
+void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, float *result, int dngtemp)
 {
     float vdd;
     float ta;
@@ -387,7 +387,9 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
             
             To = sqrt(sqrt(irData / (alphaCompensated * alphaCorrR[range] * (1 + params->ksTo[range] * (To - params->ct[range]))) + taTr)) - 273.15;
             
-            result[pixelNumber] = To;
+            //result[pixelNumber] = To;
+            if ( To >= dngtemp ) { result[(2 * (pixelNumber / 32)) + pixelNumber + 35] = 1; }
+            else                 { result[(2 * (pixelNumber / 32)) + pixelNumber + 35] = 0; }
         }
     }
 }
