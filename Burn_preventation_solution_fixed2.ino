@@ -24,8 +24,9 @@ float epsilon1_2 = 0;
 int stat = 0;
 bool ing = false;
 
-const char* ssid = "AndroidHotspot1867";       // 공백없이 정확히 넣어야 해요.
-const char* password = "01051781867";   // 공백없이 정확히 넣어야 해요.
+const char* ssid = "Galaxy_kdy";       // 공백없이 정확히 넣어야 해요.
+const char* password = "vefv9301";   // 공백없이 정확히 넣어야 해요.
+
 
 int status_wifi = WL_IDLE_STATUS; 
 WiFiServer server(80); 
@@ -72,27 +73,30 @@ void setup() {
 }
 
 void loop(void) {
+
   switch (stat){
     case 0:         //위험판단 실행
       readTempValues();
       break;
       
     case 1:         //위험신호 전달(200)
+      for (int i=0; i<1000; i++){  
       client.flush();
       client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
-      Serial.println("되냐");
       delay(2); 
-
+      }
+      Serial.println("되냐");
       ing = true;
       stat = 0;
       break;
       
     case 2:         //안전신호 전달(0)
+      for (int i=0; i<1000; i++){  
       client.flush();
       client.print("HTTP/1.1 0 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
-      Serial.println("되냐");
       delay(2); 
-
+      }
+      Serial.println("되냐");
       ing = false;
       stat = 0;
       
@@ -100,6 +104,7 @@ void loop(void) {
       
     default:
       break;
+
   }
 }
 
