@@ -78,21 +78,31 @@ void loop(void) {
       break;
       
     case 1:         //위험신호 전달(200)
-      client.flush();
-      client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
-      Serial.println("되냐");
-      delay(2); 
+      while true {
+        client.flush();
+        client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
+        delay(1);
+        String rec = client.readStringUntil('\r');          //수신되었는지 확인
+        Serial.println(rec);                                //수신되었는지 확인
+        if(rec != 0) break;
+      }
 
+      Serial.print("위험위험");
       ing = true;
       stat = 0;
       break;
       
     case 2:         //안전신호 전달(0)
-      client.flush();
-      client.print("HTTP/1.1 0 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
-      Serial.println("되냐");
-      delay(2); 
+      while true {
+        client.flush();
+        client.print("HTTP/1.1 0 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
+        delay(1);
+        String rec = client.readStringUntil('\r');          //수신되었는지 확인
+        Serial.println(rec);                                //수신되었는지 확인
+        if(rec != 0) break;
+      }
 
+      Serial.print("안전안전");
       ing = false;
       stat = 0;
       
