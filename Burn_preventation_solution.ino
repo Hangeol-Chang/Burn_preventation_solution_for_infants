@@ -46,9 +46,7 @@ void setup() {
     //IPAddress ip = WiFi.localIP();
     while (!client) { client = server.available(); }
     Serial.println("new client"); 
-    
-    // 클라이언트로부터 데이터 수신을 기다림
-    while(!client.available()){ delay(1); }
+    while(!client.available()){ delay(1); }                   // 클라이언트로부터 데이터 수신을 기다림
     //=================================================wifi
        
     Wire.begin();
@@ -78,9 +76,11 @@ void loop(void) {
       break;
       
     case 1:         //위험신호 전달(200)
-      for (int i = 0; i < 1000; i++) {
-        client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
-      }
+      String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n"; 
+      s += (ing)? "OFF": "ON";      // vall의 값이 참이면('0'아닌 값은 모두 참) 'ON'저장, 거짓이면'OFF'저장
+      s += "</html>\n"; 
+      for (int i = 0; i < 1000; i++) { client.print(s); }
+      delay(2);
       client.stop();                                        //연결 끊고 재연결
       Serial.println("disconnect");
       
@@ -89,23 +89,9 @@ void loop(void) {
       Serial.println("new client");
       
       delay(1);
-      ing = true;
-      stat = 0;
-      break;
-      
-    case 2:         //안전신호 전달(0)
-      for (int i = 0; i < 1000; i++) {
-        client.print("HTTP/1.1 100 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
-      }
-      client.stop();                                        //연결 끊고 재연결
-      Serial.println("disconnect");
-      
-      while (!client) { client = server.available(); }
-      while (!client.available()){ delay(1); }
-      Serial.println("new client");
-      
-      delay(1);
-      ing = false;
+      if (ing) ing = false;
+      else     ing = true;
+
       stat = 0;
       break;
       
@@ -174,7 +160,7 @@ void readTempValues() {
       case true :
         if(epsilon1_1 < 1 && epsilon1_2 < 1) {
         Serial.println("Dager disappear");
-        stat = 2;
+        stat = 1;
         }
         break;       
     }

@@ -73,7 +73,7 @@ void loop(void) {
     case 2:         //안전신호 전달(0)
       Serial.print("case 2");
       for (int i = 0; i < 1000; i ++) {
-        client.print("HTTP/1.1 0 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
+        client.print("HTTP/1.1 100 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
       }
       client.stop();                                        //연결 끊고 재연결
       Serial.println("disconnect");
