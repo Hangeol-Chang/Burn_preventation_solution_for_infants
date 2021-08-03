@@ -81,6 +81,7 @@ void loop(void) {
       for (int i = 0; i < 100; i++) {
         client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
       }
+      
       delay(1);
       client.stop();                                        //연결 끊고 재연결
       while (!client) { client = server.available(); }
@@ -94,6 +95,7 @@ void loop(void) {
       for (int i = 0; i < 100; i++) {
         client.print("HTTP/1.1 0 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
       }
+      
       delay(1);
       client.stop();                                        //연결 끊고 재연결
       while (!client) { client = server.available(); }

@@ -40,31 +40,30 @@ void loop(void) {
       break;
       
     case 1:         //위험신호 전달(200)
-      while true {
-        client.flush();
+      for (int i = 0; i < 100; i++) {
         client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
-        delay(1);
-        String rec = client.readStringUntil('\r');          //수신되었는지 확인
-        Serial.println(rec);                                //수신되었는지 확인
-        if(rec != 0) break;
       }
-
-      Serial.print("위험위험");
+      
+      delay(1);
+      client.stop();                                        //연결 끊고 재연결
+      while (!client) { client = server.available(); }
+      delay(1);
+      Serial.println("위험");
       ing = true;
       stat = 0;
       break;
       
     case 2:         //안전신호 전달(0)
-      while true {
-        client.flush();
+      for (int i = 0; i < 100; i++) {
         client.print("HTTP/1.1 0 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
-        delay(1);
-        String rec = client.readStringUntil('\r');          //수신되었는지 확인
-        Serial.println(rec);                                //수신되었는지 확인
-        if(rec != 0) break;
       }
+      
+      delay(1);
+      client.stop();                                        //연결 끊고 재연결
+      while (!client) { client = server.available(); }
+      delay(1);
 
-      Serial.print("안전안전");
+      Serial.println("안전");
       ing = false;
       stat = 0;
       
