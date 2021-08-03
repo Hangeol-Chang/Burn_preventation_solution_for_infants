@@ -45,9 +45,9 @@ void setup() {
 
     //IPAddress ip = WiFi.localIP();
     while (!client) { client = server.available(); }
-  
-    // 클라이언트로부터 데이터 수신을 기다림
     Serial.println("new client"); 
+    
+    // 클라이언트로부터 데이터 수신을 기다림
     while(!client.available()){ delay(1); }
     //=================================================wifi
        
@@ -78,15 +78,17 @@ void loop(void) {
       break;
       
     case 1:         //위험신호 전달(200)
-      for (int i = 0; i < 100; i++) {
+      for (int i = 0; i < 1000; i++) {
         client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
       }
-      
-      delay(1);
       client.stop();                                        //연결 끊고 재연결
-      while (!client) { client = server.available(); }
-      delay(1);
+      Serial.println("disconnect");
       
+      while (!client) { client = server.available(); }
+      while (!client.available()){ delay(1); }
+      Serial.println("new client");
+      
+      delay(1);
       ing = true;
       stat = 0;
       break;
@@ -95,15 +97,16 @@ void loop(void) {
       for (int i = 0; i < 100; i++) {
         client.print("HTTP/1.1 0 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
       }
+      client.stop();                                        //연결 끊고 재연결
+      Serial.println("disconnect");
+      
+      while (!client) { client = server.available(); }
+      while (!client.available()){ delay(1); }
+      Serial.println("new client");
       
       delay(1);
-      client.stop();                                        //연결 끊고 재연결
-      while (!client) { client = server.available(); }
-      delay(1);
-
       ing = false;
       stat = 0;
-      
       break;
       
     default:

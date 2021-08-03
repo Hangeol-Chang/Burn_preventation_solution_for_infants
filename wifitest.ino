@@ -40,13 +40,14 @@ void loop(void) {
       break;
       
     case 1:         //위험신호 전달(200)
-      for (int i = 0; i < 100; i++) {
+      for (int i = 0; i < 1000; i++) {
         client.print("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
       }
-      
-      delay(1);
       client.stop();                                        //연결 끊고 재연결
+      
       while (!client) { client = server.available(); }
+      while (!client.available()){ delay(1); }
+      
       delay(1);
       Serial.println("위험");
       ing = true;
@@ -54,13 +55,14 @@ void loop(void) {
       break;
       
     case 2:         //안전신호 전달(0)
-      for (int i = 0; i < 100; i++) {
+      for (int i = 0; i < 1000; i++) {
         client.print("HTTP/1.1 0 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
       }
-      
-      delay(1);
       client.stop();                                        //연결 끊고 재연결
+      
       while (!client) { client = server.available(); }
+      while (!client.available()){ delay(1); }
+      
       delay(1);
 
       Serial.println("안전");
