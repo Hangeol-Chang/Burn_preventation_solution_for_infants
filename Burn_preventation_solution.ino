@@ -94,8 +94,8 @@ void loop(void) {
       break;
       
     case 2:         //안전신호 전달(0)
-      for (int i = 0; i < 100; i++) {
-        client.print("HTTP/1.1 0 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
+      for (int i = 0; i < 1000; i++) {
+        client.print("HTTP/1.1 100 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n</html>\n");
       }
       client.stop();                                        //연결 끊고 재연결
       Serial.println("disconnect");
