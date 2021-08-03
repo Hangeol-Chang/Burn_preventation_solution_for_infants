@@ -43,7 +43,6 @@ void setup() {
     }
     Serial.println("wifi connected");
 
-    //IPAddress ip = WiFi.localIP();
     while (!client) { client = server.available(); }
     Serial.println("new client"); 
     while(!client.available()){ delay(1); }                   // 클라이언트로부터 데이터 수신을 기다림
@@ -54,7 +53,7 @@ void setup() {
     Wire.beginTransmission((uint8_t)MLX90640_address1[0]);
     if (Wire.endTransmission() != 0) {
         Serial.println("MLX90640 not detected at default I2C address. Starting scan the device addr...");
-        //    Device_Scan();
+        //  Device_Scan();
     }
     else { Serial.println("MLX90640 online!"); }
     
@@ -75,16 +74,16 @@ void loop(void) {
       readTempValues();
       break;
       
-    case 1:         //위험신호 전달(200)
+    case 1:         //위험신호(ON), 안전신호(OFF)
       String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n"; 
       s += (ing)? "OFF": "ON";      // vall의 값이 참이면('0'아닌 값은 모두 참) 'ON'저장, 거짓이면'OFF'저장
       s += "</html>\n"; 
       for (int i = 0; i < 1000; i++) { client.print(s); }
-      delay(2);
-      client.stop();                                        //연결 끊고 재연결
+      delay(1);
+      client.stop();                                        //연결 끊기
       Serial.println("disconnect");
       
-      while (!client) { client = server.available(); }
+      while (!client) { client = server.available(); }      //재연결
       while (!client.available()){ delay(1); }
       Serial.println("new client");
       
@@ -93,9 +92,6 @@ void loop(void) {
       else     ing = true;
 
       stat = 0;
-      break;
-      
-    default:
       break;
   }
 }
