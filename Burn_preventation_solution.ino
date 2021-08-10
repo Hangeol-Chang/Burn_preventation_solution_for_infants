@@ -19,6 +19,7 @@ static float tempValues1[26 * 34];
 
 float epsilon1_1 = 0;
 float epsilon1_2 = 0;
+int que[2*3];
 
 //=======================================wifi
 int stat = 0;
@@ -98,7 +99,7 @@ void loop(void) {
 
 //===================================================위험판단알고리즘======================================================================
 int save1[884];
-int correction_factor = 0;                 //0 = 정사각영역, 1 = 직사각영역, 2 = 비사각영역
+float correction_factor = 0;                 //0 = 정사각영역, 1 = 직사각영역, 2 = 비사각영역
 
 void readTempValues() {
     uint16_t mlx90640Frame1[834];
@@ -111,37 +112,26 @@ void readTempValues() {
 
     int temp = 35;
     MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor);
-
-    /*for (int i = 1; i < 25; i++) {                                  //인접지역(b)변환, 3으로 변환하도록 함     이거 헤더파일 안으로 집어넣음
-      for(int j = 1; j < 33; j++) {
-        if(tempValues1[ (i * 34) + j ] == 1){
-          if(tempValues1[ (i * 34) + j - 1 ] == 0) tempValues1[ (i * 34) + j - 1 ] = 3;
-          if(tempValues1[ (i * 34) + j + 2 ] == 0) tempValues1[ (i * 34) + j + 2 ] = 3;
-          if(tempValues1[ ((i - 1) * 34) + j ] == 0) tempValues1[ ((i - 1) * 34) + j ] = 3;
-          if(tempValues1[ ((i + 1) * 34) + j ] == 0) tempValues1[ ((i + 1) * 34) + j ] = 3;
-        }
-      }
-    }*/
-
+    
     float Atob = 0;
     float btoA = 0;
 
     for (int i = 0; i < 884; i++) {
       if(tempValues1[i] == 0) continue;
       else{
-        if(tempValues1[i] - save1[i] == 2)  { Atob ++; }           //후퇴
+        if(tempValues1[i] - save1[i] ==  2) { Atob ++; }           //후퇴
         if(tempValues1[i] - save1[i] == -2) { btoA ++; }           //접근  
       }
     }
     epsilon1_2 = epsilon1_1;
-    epsilon1_1 = btoA / (Atob + 1);
+    epsilon1_1 = btoA / (Atob + 1 + correction_factor);
 
     //============================================입실론 디버깅
-    Serial.print("Epsilon1 is : ");
-    Serial.println(epsilon1_1);
-    Serial.print("Epsilon2 is : ");
-    Serial.println(epsilon1_2);
+    Serial.print("Epsilon1 is : "); Serial.println(epsilon1_1);
+    Serial.print("Epsilon2 is : "); Serial.println(epsilon1_2);
     Serial.println("");
+
+    Serial.println(correction_factor);
     //============================================입실론 디버깅
     
     switch (ing) {

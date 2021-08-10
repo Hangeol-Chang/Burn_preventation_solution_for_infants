@@ -261,7 +261,7 @@ int MLX90640_GetCurMode(uint8_t slaveAddr)
 
 //------------------------------------------------------------------------------온도가져오는거이거이거이거이거
 
-void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, float *result, int dngtemp, int *corfac)
+void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, float *result, int dngtemp, float corfac)
 {
     float vdd;
     float ta;
@@ -391,9 +391,15 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
 
             // To가 온도
             To = sqrt(sqrt(irData / (alphaCompensated * alphaCorrR[range] * (1 + params->ksTo[range] * (To - params->ct[range]))) + taTr)) - 273.15;
+
+            int row = 0;
+            int pointer = 0;
             
             loc = (2 * (pixelNumber / 32)) + pixelNumber + 35;
-            if ( To >= dngtemp ) {                                                      //Ab갯수 세는거까지 추가
+            
+            if(pixelNumber / 32 == 0) { row++; pointer = 0; }
+
+            if ( To >= dngtemp ) {                                                      //Ab갯수 세는거까지 추가, 중심잡는거 추가중
               countA ++;
               if(result[loc] == 3) countb --;
               result[loc] = 1;
@@ -407,8 +413,12 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
         }
     }
 
-    float corfac_dec = countb / countA;
-    if(  > corfac_dec >= 
+    if(countA >= 1){
+      float corfac_dec = countb / countA;
+      if( 7*pow(countA,13/30) > corfac_dec >= 4*pow(countA,1/2) ) { corfac = 0; }                              //정사각형태
+      else if( 10*pow(countA,2/5) > corfac_dec )                  { corfac = pow(corfac_dec,1/4)/8; }          //직사각형태
+      else                                                        { corfac = pow(corfac_dec,1/3)/7; }          //비사각형태
+    }
 }
 
 //------------------------------------------------------------------------------
