@@ -259,9 +259,9 @@ int MLX90640_GetCurMode(uint8_t slaveAddr)
     return modeRAM; 
 }
 
-//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------온도가져오는거이거이거이거이거
 
-void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, float *result, int dngtemp)
+void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, float *result, int dngtemp, int *corfac)
 {
     float vdd;
     float ta;
@@ -282,6 +282,10 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
     float alphaCorrR[4];
     int8_t range;
     uint16_t subPage;
+
+    int loc = 0;
+    float countA = 0;
+    float countb = 0;
     
     subPage = frameData[833];
     vdd = MLX90640_GetVdd(frameData, params);
@@ -384,14 +388,27 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
             {
                 range = 3;            
             }      
-            
+
+            // To가 온도
             To = sqrt(sqrt(irData / (alphaCompensated * alphaCorrR[range] * (1 + params->ksTo[range] * (To - params->ct[range]))) + taTr)) - 273.15;
             
-            //result[pixelNumber] = To;
-            if ( To >= dngtemp ) { result[(2 * (pixelNumber / 32)) + pixelNumber + 35] = 1; }
-            else                 { result[(2 * (pixelNumber / 32)) + pixelNumber + 35] = 0; }
+            loc = (2 * (pixelNumber / 32)) + pixelNumber + 35;
+            if ( To >= dngtemp ) {                                                      //Ab갯수 세는거까지 추가
+              countA ++;
+              if(result[loc] == 3) countb --;
+              result[loc] = 1;
+              
+              if(result[loc - 34] == 0) { result[loc - 34] = 3; countb++; }
+              if(result[loc + 34] == 0) { result[loc + 34] = 3; countb++; }
+              if(result[loc - 1 ] == 0) { result[loc - 1 ] = 3; countb++; }
+              if(result[loc + 1 ] == 0) { result[loc + 1 ] = 3; countb++; }
+            }
+            // else { result[loc] = 0; }
         }
     }
+
+    float corfac_dec = countb / countA;
+    if(  > corfac_dec >= 
 }
 
 //------------------------------------------------------------------------------

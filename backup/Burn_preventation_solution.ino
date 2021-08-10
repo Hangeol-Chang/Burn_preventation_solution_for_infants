@@ -98,7 +98,6 @@ void loop(void) {
 
 //===================================================위험판단알고리즘======================================================================
 int save1[884];
-int correction_factor = 0;                 //0 = 정사각영역, 1 = 직사각영역, 2 = 비사각영역
 
 void readTempValues() {
     uint16_t mlx90640Frame1[834];
@@ -110,9 +109,9 @@ void readTempValues() {
     float tr1 = Ta1 - TA_SHIFT;
 
     int temp = 35;
-    MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor);
+    MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp);
 
-    /*for (int i = 1; i < 25; i++) {                                  //인접지역(b)변환, 3으로 변환하도록 함     이거 헤더파일 안으로 집어넣음
+    for (int i = 1; i < 25; i++) {                                  //인접지역(b)변환, 3으로 변환하도록 함
       for(int j = 1; j < 33; j++) {
         if(tempValues1[ (i * 34) + j ] == 1){
           if(tempValues1[ (i * 34) + j - 1 ] == 0) tempValues1[ (i * 34) + j - 1 ] = 3;
@@ -121,11 +120,13 @@ void readTempValues() {
           if(tempValues1[ ((i + 1) * 34) + j ] == 0) tempValues1[ ((i + 1) * 34) + j ] = 3;
         }
       }
-    }*/
+    }
+    //Serial.println("Array - Save");
 
     float Atob = 0;
     float btoA = 0;
 
+    int tendency;
     for (int i = 0; i < 884; i++) {
       if(tempValues1[i] == 0) continue;
       else{
