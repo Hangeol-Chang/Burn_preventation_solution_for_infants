@@ -3,23 +3,15 @@
 #include "MLX90640_API.h"
 #include "MLX90640_I2C_Driver.h"
 #include <avr/pgmspace.h>
-
 //=======================================wifi
 #include <SPI.h> 
 #include <WiFiNINA.h>
 //=======================================wifi
-
 #define EMMISIVITY 0.95
 #define TA_SHIFT 8 
 
 paramsMLX90640 mlx90640;
 const byte MLX90640_address1[] PROGMEM = { 0x32 }; //Default 7-bit unshifted address of the MLX90640
-
-static float tempValues1[26 * 34];
-
-float epsilon1_1 = 0;
-float epsilon1_2 = 0;
-int que[2*3];
 
 //=======================================wifi
 int stat = 0;
@@ -100,18 +92,37 @@ void loop(void) {
 //===================================================위험판단알고리즘======================================================================
 int save1[884];
 float correction_factor = 0;                 //0 = 정사각영역, 1 = 직사각영역, 2 = 비사각영역
+static float tempValues1[26 * 34];
+float epsilon1_1 = 0;
+float epsilon1_2 = 0;
+int coor1[2];
+int coor2[2];
+int movespd[2];
+bool isgraze;
+
+int temp = 35;
+int stdspd = 0;
 
 void readTempValues() {
     uint16_t mlx90640Frame1[834];
     int status1 = MLX90640_GetFrameData(MLX90640_address1[0], mlx90640Frame1);
     if (status1 < 0) Serial.println("GetFrame Error: " && status1);
 
-    //float vdd1 = MLX90640_GetVdd(mlx90640Frame1, &mlx90640);        //뒤에서 안쓰이는듯? 일단 지워봄
     float Ta1 = MLX90640_GetTa(mlx90640Frame1, &mlx90640);
     float tr1 = Ta1 - TA_SHIFT;
 
-    int temp = 35;
-    MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor);
+    MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor, coor2);
+
+    //==========================================================================스피드보정
+    if(coor1[0] != 0 || coor1[1] != 0) { movespd[1] = sqrt( (coor2[0] - coor1[0])^2 + (coor2[1] - coor1[1])^2 ); }
+    if ( abs( movespd[1] - movespd[0] ) > 0 ) isgraze = true ;
+    else                                      isgraze = false;
+
+    Serial.print( "가속도 : "); Serial.println( movespd[1] - movespd[0] ); Serial.println("");
+
+    coor1[0] = coor2[0]; coor1[1] = coor2[1];             //다음을 위한 정리
+    movespd[0] = movespd[1];
+    //==========================================================================스피드보정
     
     float Atob = 0;
     float btoA = 0;
@@ -136,17 +147,14 @@ void readTempValues() {
     
     switch (ing) {
       case false :
-        if (epsilon1_1 >= 1 && epsilon1_2 >= 1) {
-          Serial.println("Warning!");
-          stat = 1;
-        }
+        if (epsilon1_1 >= 4) { Serial.println("Warning!"); stat = 1; }
+        if (epsilon1_1 >= 1.5 && epsilon1_2 >= 1.5 && isgraze == false) {
+                               Serial.println("Warning!"); stat = 1; }
         break;
-        
       case true :
         if(epsilon1_1 < 1 && epsilon1_2 < 1) {
-        Serial.println("Dager disappear");
-        stat = 1;
-        }
+                               Serial.println("Dager disappear");
+                               stat = 1; }
         break;       
     }
     for(int i = 0; i < 884; i++){ save1[i] = tempValues1[i]; }    //이전 루프 012배열을 save배열에 저장(메모리 때문에 일차원배열에 저장)

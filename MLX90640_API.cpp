@@ -261,7 +261,7 @@ int MLX90640_GetCurMode(uint8_t slaveAddr)
 
 //------------------------------------------------------------------------------온도가져오는거이거이거이거이거
 
-void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, float *result, int dngtemp, float corfac)
+void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, float *result, int dngtemp, float corfac, int *coordinate)
 {
     float vdd;
     float ta;
@@ -286,6 +286,11 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
     int loc = 0;
     float countA = 0;
     float countb = 0;
+
+    int row = 0;
+    int coordinatetmploc[32];
+    int coordinatetmp[24][2];
+    int pointer = 0;
     
     subPage = frameData[833];
     vdd = MLX90640_GetVdd(frameData, params);
@@ -301,13 +306,8 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
     
 //------------------------- Gain calculation -----------------------------------    
     gain = frameData[778];
-    if(gain > 32767)
-    {
-        gain = gain - 65536;
-    }
-    
+    if(gain > 32767) { gain = gain - 65536; }
     gain = params->gainEE / gain; 
-  
 //------------------------- To calculation -------------------------------------    
     mode = (frameData[832] & 0x1000) >> 5;
     
@@ -315,21 +315,15 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
     irDataCP[1] = frameData[808];
     for( int i = 0; i < 2; i++)
     {
-        if(irDataCP[i] > 32767)
-        {
-            irDataCP[i] = irDataCP[i] - 65536;
-        }
+        if(irDataCP[i] > 32767) { irDataCP[i] = irDataCP[i] - 65536; }
         irDataCP[i] = irDataCP[i] * gain;
     }
+    
     irDataCP[0] = irDataCP[0] - params->cpOffset[0] * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3));
     if( mode ==  params->calibrationModeEE)
-    {
-        irDataCP[1] = irDataCP[1] - params->cpOffset[1] * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3));
-    }
+    { irDataCP[1] = irDataCP[1] - params->cpOffset[1] * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3)); }
     else
-    {
-      irDataCP[1] = irDataCP[1] - (params->cpOffset[1] + params->ilChessC[0]) * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3));
-    }
+    { irDataCP[1] = irDataCP[1] - (params->cpOffset[1] + params->ilChessC[0]) * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3)); }
 
     for( int pixelNumber = 0; pixelNumber < 768; pixelNumber++)
     {
@@ -337,34 +331,20 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
         chessPattern = ilPattern ^ (pixelNumber - (pixelNumber/2)*2); 
         conversionPattern = ((pixelNumber + 2) / 4 - (pixelNumber + 3) / 4 + (pixelNumber + 1) / 4 - pixelNumber / 4) * (1 - 2 * ilPattern);
         
-        if(mode == 0)
-        {
-          pattern = ilPattern; 
-        }
-        else 
-        {
-          pattern = chessPattern; 
-        }               
+        if(mode == 0) { pattern = ilPattern; }
+        else { pattern = chessPattern; }               
         
         if(pattern == frameData[833])
         {    
             irData = frameData[pixelNumber];
-            if(irData > 32767)
-            {
-                irData = irData - 65536;
-            }
+            if(irData > 32767) { irData = irData - 65536; }
             irData = irData * gain;
             
             irData = irData - params->offset[pixelNumber]*(1 + params->kta[pixelNumber]*(ta - 25))*(1 + params->kv[pixelNumber]*(vdd - 3.3));
-            if(mode !=  params->calibrationModeEE)
-            {
-              irData = irData + params->ilChessC[2] * (2 * ilPattern - 1) - params->ilChessC[1] * conversionPattern; 
-            }
+            if(mode !=  params->calibrationModeEE) { irData = irData + params->ilChessC[2] * (2 * ilPattern - 1) - params->ilChessC[1] * conversionPattern; }
             
             irData = irData / emissivity;
-    
             irData = irData - params->tgc * irDataCP[subPage];
-            
             alphaCompensated = (params->alpha[pixelNumber] - params->tgc * params->cpAlpha[subPage])*(1 + params->KsTa * (ta - 25));
             
             Sx = pow((double)alphaCompensated, (double)3) * (irData + alphaCompensated * taTr);
@@ -372,46 +352,52 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
             
             To = sqrt(sqrt(irData/(alphaCompensated * (1 - params->ksTo[1] * 273.15) + Sx) + taTr)) - 273.15;
                     
-            if(To < params->ct[1])
-            {
-                range = 0;
-            }
-            else if(To < params->ct[2])   
-            {
-                range = 1;            
-            }   
-            else if(To < params->ct[3])
-            {
-                range = 2;            
-            }
-            else
-            {
-                range = 3;            
-            }      
+            if(To < params->ct[1])      { range = 0; }
+            else if(To < params->ct[2]) { range = 1; }   
+            else if(To < params->ct[3]) { range = 2; }
+            else                        { range = 3; }      
 
             // To가 온도
             To = sqrt(sqrt(irData / (alphaCompensated * alphaCorrR[range] * (1 + params->ksTo[range] * (To - params->ct[range]))) + taTr)) - 273.15;
-
-            int row = 0;
-            int pointer = 0;
             
-            loc = (2 * (pixelNumber / 32)) + pixelNumber + 35;
-            
-            if(pixelNumber / 32 == 0) { row++; pointer = 0; }
+            loc = (2 * (pixelNumber) / 32) + pixelNumber + 35;
 
-            if ( To >= dngtemp ) {                                                      //Ab갯수 세는거까지 추가, 중심잡는거 추가중
+            if ( To >= dngtemp ) {                                          //Ab갯수 세는거까지 추가, 중심잡는거 추가
               countA ++;
               if(result[loc] == 3) countb --;
               result[loc] = 1;
+
+              coordinatetmploc[pointer] = pixelNumber - (row * 32);
+              pointer++;
               
               if(result[loc - 34] == 0) { result[loc - 34] = 3; countb++; }
               if(result[loc + 34] == 0) { result[loc + 34] = 3; countb++; }
               if(result[loc - 1 ] == 0) { result[loc - 1 ] = 3; countb++; }
               if(result[loc + 1 ] == 0) { result[loc + 1 ] = 3; countb++; }
+            }       
+            if( (pixelNumber + 1) / 32 == 0) { 
+              if(pointer != 0) {
+                int tmpsum = 0;
+                for (int t = 0; t < pointer;t++){
+                  tmpsum += coordinatetmploc[t] + 1;
+                  coordinatetmploc[t] = 0;
+                }
+                coordinatetmp[row][0] = tmpsum;
+                coordinatetmp[row][1] = pointer;
+              }
+              row++; pointer = 0;
             }
-            // else { result[loc] = 0; }
         }
     }
+
+    int tmpcount = 0;
+    for (int t = 0; t < 24; t++){
+      coordinate[0] += coordinatetmp[t][0];
+      coordinate[1] += coordinatetmp[t][1] * (t+1);
+      tmpcount      += coordinatetmp[t][1];
+    }
+    coordinate[0] = coordinate[0] / tmpcount;
+    coordinate[1] = coordinate[1] / tmpcount;
 
     if(countA >= 1){
       float corfac_dec = countb / countA;
