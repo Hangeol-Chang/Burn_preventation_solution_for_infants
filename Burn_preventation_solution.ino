@@ -39,7 +39,6 @@ void setup() {
     while (!client) { client = server.available(); }
     Serial.println("new client"); 
     while(!client.available()){ delay(1); }                   // 클라이언트로부터 데이터 수신을 기다림
-    Serial.println("data received");
     //=================================================wifi
        
     Wire.begin();
@@ -50,7 +49,6 @@ void setup() {
         //  Device_Scan();
     }
     else { Serial.println("MLX90640 online!"); }
-    Serial.println("pass");
     
     int status;
     int status1;
@@ -66,6 +64,7 @@ void setup() {
 void loop(void) {
   switch (stat){
     case 0:         //위험판단 실행
+      Serial.println("위험판단");
       readTempValues();
       break;
       
@@ -84,7 +83,7 @@ void loop(void) {
       
       delay(1);
       if (ing) ing = false;
-      else     ing = true;
+      else     ing = true ;
 
       stat = 0;
       break;
@@ -95,8 +94,8 @@ void loop(void) {
 int save1[884];
 float correction_factor = 0;                 //0 = 정사각영역, 1 = 직사각영역, 2 = 비사각영역
 static float tempValues1[26 * 34];
-float epsilon1_1 = 0;
-float epsilon1_2 = 0;
+float epsilon1_1;
+float epsilon1_2;
 int coor1[2];
 int coor2[2];
 int movespd[2];
@@ -126,8 +125,8 @@ void readTempValues() {
     movespd[0] = movespd[1];
     //==========================================================================스피드보정
     
-    float Atob = 0;
-    float btoA = 0;
+    int Atob = 0;
+    int btoA = 0;
 
     for (int i = 0; i < 884; i++) {
       if(tempValues1[i] == 0) continue;

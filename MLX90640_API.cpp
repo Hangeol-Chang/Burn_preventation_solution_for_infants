@@ -389,7 +389,9 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
             }
         }
     }
-
+    row = 0;
+    pointer = 0;
+    
     int tmpcount = 0;
     for (int t = 0; t < 24; t++){
       coordinate[0] += coordinatetmp[t][0];
