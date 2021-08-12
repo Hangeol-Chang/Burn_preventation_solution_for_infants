@@ -102,9 +102,9 @@ void loop(void) {
 
 static int tempValues1[26 * 34];             static int tempValues2[26 * 34];
 float epsilon1_1;                            float epsilon1_2;                      // 입실론
-int coor1[2];                                int coor2[2];                          // 중심좌표 저장
+int coor1[3];                                int coor2[3];                          // 중심좌표, 사이즈정보 저장
 int movespd[2];           /*중심속도*/        bool isgraze;                          //가속도(지나치는지 판단)
-int swi = 1;              /*스위치*/          
+int swi = 1;              /*스위치*/         float sizecomp;
 float correction_factor;            // 0 = 비왜곡영역, 1 = 저왜곡영역, 2 = 고왜곡영역
 
 int temp = 35;            //화상위험 기준온도
@@ -167,22 +167,28 @@ void readTempValues() {
     }
     epsilon1_2 = epsilon1_1;
     epsilon1_1 = btoA / (Atob + 1 + correction_factor);
+
+    if(swi == 1) { if(coor1[2] == 0) { sizecomp = 0; } else { sizecomp = (float)coor2[2] / (float)coor1[2]; }}
+    else         { if(coor2[2] == 0) { sizecomp = 0; } else { sizecomp = (float)coor1[2] / (float)coor2[2]; }}
+    
     Serial.println("====================================Debugging page====================================");
     Serial.print("Epsilon component : Atob : "); Serial.print(Atob); Serial.print(" / btoA : "); Serial.println(btoA); 
     Serial.print("       Correction factor : "); Serial.println(correction_factor);
-    Serial.print("             Epsilon1 is : "); Serial.println(epsilon1_1);
-    Serial.print("             Epsilon2 is : "); Serial.println(epsilon1_2);
+    Serial.print("                Epsilon1 : "); Serial.println(epsilon1_1);
+    Serial.print("                Epsilon2 : "); Serial.println(epsilon1_2);
+    Serial.print("                sizecomp : "); Serial.println(sizecomp);
     Serial.println("");
     
     switch (ing) {
       case false :
-        if (epsilon1_1 >= 3.5) { Serial.println("Warning!");        stat = 1; }
-        if (epsilon1_1 >= 1.5 && epsilon1_2 >= 1.5 && isgraze == false) {
-                                 Serial.println("Warning!");        stat = 1; }
-        break;
+        if      (epsilon1_1 >= 3.5) { Serial.println("Warning!");        stat = 1; }
+        else if (epsilon1_1 >= 1.5 && epsilon1_2 >= 1.5 && isgraze == false) {
+                                      Serial.println("Warning!");        stat = 1; }
+        else if (sizecomp >= 2)   { Serial.println("Warning!");        stat = 1; }
+        break;    
       case true :
         if(epsilon1_1 < 1 && epsilon1_2 < 1) {
-                                 Serial.println("Dager disappear"); stat = 1; }
+                                      Serial.println("Dager disappear"); stat = 1; }
         break;       
     }
 }
