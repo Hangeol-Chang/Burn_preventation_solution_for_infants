@@ -39,6 +39,7 @@ void setup() {
     while (!client) { client = server.available(); }
     Serial.println("new client"); 
     while(!client.available()){ delay(1); }                   // 클라이언트로부터 데이터 수신을 기다림
+    Serial.println("pass");
     //=================================================wifi
        
     Wire.begin();

@@ -53,50 +53,30 @@ int MLX90640_GetFrameData(uint8_t slaveAddr, uint16_t *frameData)
     while(dataReady == 0)
     {
         error = MLX90640_I2CRead(slaveAddr, 0x8000, 1, &statusRegister);
-        if(error != 0)
-        {
-            return error;
-        }    
+        if(error != 0) { return error; }    
         dataReady = statusRegister & 0x0008;
     }       
         
     while(dataReady != 0 && cnt < 5)
     { 
         error = MLX90640_I2CWrite(slaveAddr, 0x8000, 0x0030);
-        if(error == -1)
-        {
-            return error;
-        }
+        if(error == -1) { return error; }
             
         error = MLX90640_I2CRead(slaveAddr, 0x0400, 832, frameData); 
-        if(error != 0)
-        {
-            return error;
-        }
+        if(error != 0) { return error; }
                    
         error = MLX90640_I2CRead(slaveAddr, 0x8000, 1, &statusRegister);
-        if(error != 0)
-        {
-            return error;
-        }    
+        if(error != 0) { return error; }    
         dataReady = statusRegister & 0x0008;
         cnt = cnt + 1;
     }
-    
-    if(cnt > 4)
-    {
-        return -8;
-    }    
+    if(cnt > 4) { return -8; }    
     
     error = MLX90640_I2CRead(slaveAddr, 0x800D, 1, &controlRegister1);
     frameData[832] = controlRegister1;
     frameData[833] = statusRegister & 0x0001;
     
-    if(error != 0)
-    {
-        return error;
-    }
-    
+    if(error != 0) { return error; }
     return frameData[833];    
 }
 
@@ -121,7 +101,6 @@ int MLX90640_ExtractParameters(uint16_t *eeData, paramsMLX90640 *mlx90640)
         ExtractCILCParameters(eeData, mlx90640);
         error = ExtractDeviatingPixels(eeData, mlx90640);  
     }
-    
     return error;
 
 }
@@ -156,10 +135,7 @@ int MLX90640_GetCurResolution(uint8_t slaveAddr)
     int error;
     
     error = MLX90640_I2CRead(slaveAddr, 0x800D, 1, &controlRegister1);
-    if(error != 0)
-    {
-        return error;
-    }    
+    if(error != 0) { return error; }    
     resolutionRAM = (controlRegister1 & 0x0C00) >> 10;
     
     return resolutionRAM; 
@@ -194,10 +170,7 @@ int MLX90640_GetRefreshRate(uint8_t slaveAddr)
     int error;
     
     error = MLX90640_I2CRead(slaveAddr, 0x800D, 1, &controlRegister1);
-    if(error != 0)
-    {
-        return error;
-    }    
+    if(error != 0) { return error; }    
     refreshRate = (controlRegister1 & 0x0380) >> 7;
     
     return refreshRate;
@@ -250,12 +223,8 @@ int MLX90640_GetCurMode(uint8_t slaveAddr)
     int error;
     
     error = MLX90640_I2CRead(slaveAddr, 0x800D, 1, &controlRegister1);
-    if(error != 0)
-    {
-        return error;
-    }    
+    if(error != 0) { return error; }    
     modeRAM = (controlRegister1 & 0x1000) >> 12;
-    
     return modeRAM; 
 }
 
@@ -375,12 +344,12 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
               if(result[loc - 1 ] == 0) { result[loc - 1 ] = 3; countb++; }
               if(result[loc + 1 ] == 0) { result[loc + 1 ] = 3; countb++; }
             }       
-            if( (pixelNumber + 1) / 32 == 0) { 
+            if( (pixelNumber + 1) % 32 == 0) { 
               if(pointer != 0) {
                 int tmpsum = 0;
                 for (int t = 0; t < pointer;t++){
                   tmpsum += coordinatetmploc[t] + 1;
-                  coordinatetmploc[t] = 0;
+                  //coordinatetmploc[t] = 0;
                 }
                 coordinatetmp[row][0] = tmpsum;
                 coordinatetmp[row][1] = pointer;
@@ -389,8 +358,6 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
             }
         }
     }
-    row = 0;
-    pointer = 0;
     
     int tmpcount = 0;
     for (int t = 0; t < 24; t++){
@@ -403,9 +370,9 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
 
     if(countA >= 1){
       float corfac_dec = countb / countA;
-      if( 7*pow(countA,13/30) > corfac_dec >= 4*pow(countA,1/2) ) { corfac = 0; }                              //정사각형태
-      else if( 10*pow(countA,2/5) > corfac_dec )                  { corfac = pow(corfac_dec,1/4)/8; }          //직사각형태
-      else                                                        { corfac = pow(corfac_dec,1/3)/7; }          //비사각형태
+      if( 7*pow(countA,0.43) > corfac_dec >= 4*pow(countA,0.5) ) { corfac = 0; }                              //정사각형태
+      else if( 10*pow(countA,0.4) > corfac_dec )                 { corfac = pow(corfac_dec,0.25)*0.125; }          //직사각형태
+      else                                                       { corfac = pow(corfac_dec,0.33)*0.16 ; }          //비사각형태
     }
 }
 
