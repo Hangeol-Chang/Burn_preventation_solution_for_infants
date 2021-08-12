@@ -113,7 +113,8 @@ void readTempValues() {
     float tr1 = Ta1 - TA_SHIFT;
 
     MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor, coor2);
-
+    Serial.println("pass collecting data");
+    
     //==========================================================================스피드보정
     if(coor1[0] != 0 || coor1[1] != 0) { movespd[1] = sqrt( (coor2[0] - coor1[0])^2 + (coor2[1] - coor1[1])^2 ); }
     if ( abs( movespd[1] - movespd[0] ) > 0 ) isgraze = true ;
