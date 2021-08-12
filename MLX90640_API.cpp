@@ -314,11 +314,9 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
             // To가 온도
             To = sqrt(sqrt(irData / (alphaCompensated * alphaCorrR[range] * (1 + params->ksTo[range] * (To - params->ct[range]))) + taTr)) - 273.15;
             
-            Serial.print(pixelNumber); Serial.println(" ");
-            
             for (int t = 0; t < 34; t++) { result[t]    = 0; result[t+849]     = 0; }
             for (int t = 1; t < 25; t++) { result[t*34] = 0; result[t*34 + 33] = 0; }
-            loc = (2 * (pixelNumber) / 32) + pixelNumber + 35;
+            loc = (2 * (int)((pixelNumber) / 32)) + pixelNumber + 35;
             
             if ( To < dngtemp ) result[loc] = 0;
             else {                                          //Ab갯수 세는거까지 추가, 중심잡는거 추가
