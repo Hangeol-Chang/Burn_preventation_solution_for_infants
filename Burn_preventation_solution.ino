@@ -13,7 +13,7 @@
 paramsMLX90640 mlx90640;
 const byte MLX90640_address1[] PROGMEM = { 0x32 }; //Default 7-bit unshifted address of the MLX90640
 
-//=======================================wifi
+//=======================================wifi _ 잠그면안됨
 int stat = 0;
 bool ing = false;
 
@@ -27,6 +27,7 @@ WiFiClient client;
 
 void setup() {
     Serial.begin(115200);
+    /*
     //=================================================wifi
     while (status_wifi != WL_CONNECTED) { 
       status_wifi = WiFi.begin(ssid, password); 
@@ -39,9 +40,9 @@ void setup() {
     while (!client) { client = server.available(); }
     Serial.println("new client"); 
     while(!client.available()){ delay(1); }                   // 클라이언트로부터 데이터 수신을 기다림
-    Serial.println("pass");
     //=================================================wifi
-       
+    */
+    
     Wire.begin();
     Wire.setClock(400000);
     Wire.beginTransmission((uint8_t)MLX90640_address1[0]);
@@ -65,11 +66,16 @@ void setup() {
 void loop(void) {
   switch (stat){
     case 0:         //위험판단 실행
-      Serial.println("위험판단");
+      Serial.println("====================================loop start====================================");
       readTempValues();
+      Serial.println("////////////////////////////////////=loop end=////////////////////////////////////");
+      Serial.print("\n \n \n");
+      delay(300);
       break;
       
     case 1:         //위험신호(ON), 안전신호(OFF)
+    /*
+      //================================================================wifi
       String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n"; 
       s += (ing)? "OFF": "ON";      // vall의 값이 참이면('0'아닌 값은 모두 참) 'ON'저장, 거짓이면'OFF'저장
       s += "</html>\n"; 
@@ -81,6 +87,8 @@ void loop(void) {
       while (!client) { client = server.available(); }      //재연결
       while (!client.available()){ delay(1); }
       Serial.println("new client");
+      //================================================================wifi
+      */
       
       delay(1);
       if (ing) ing = false;
@@ -92,15 +100,16 @@ void loop(void) {
 }
 
 //===================================================위험판단알고리즘======================================================================
-int save1[884];
-float correction_factor = 0;                 //0 = 정사각영역, 1 = 직사각영역, 2 = 비사각영역
-static float tempValues1[26 * 34];
-float epsilon1_1;
+float correction_factor = 0;                 //0 = 비왜곡영역, 1 = 저왜곡영역, 2 = 고왜곡영역
+static int tempValues1[26 * 34];
+static int tempValues2[26 * 34];
+float epsilon1_1;                            //입실론
 float epsilon1_2;
-int coor1[2];
+int coor1[2];                                //중심좌표 저장
 int coor2[2];
-int movespd[2];
-bool isgraze;
+int movespd[2];                              //중심속도
+bool isgraze;                                //가속도(지나치는지 판단)
+int swi = 1;                                     //스위치
 
 int temp = 35;
 int stdspd = 0;
@@ -113,40 +122,48 @@ void readTempValues() {
     float Ta1 = MLX90640_GetTa(mlx90640Frame1, &mlx90640);
     float tr1 = Ta1 - TA_SHIFT;
 
-    MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor, coor2);
+    if(swi == 1){
+      MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor, coor1);
+      swi = -1;
+    }
+    else {
+      MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues2, temp, correction_factor, coor2);
+      swi = 1;
+    }
     Serial.println("pass collecting data");
     
-    //==========================================================================스피드보정
-    if(coor1[0] != 0 || coor1[1] != 0) { movespd[1] = sqrt( (coor2[0] - coor1[0])^2 + (coor2[1] - coor1[1])^2 ); }
-    if ( abs( movespd[1] - movespd[0] ) > 0 ) isgraze = true ;
-    else                                      isgraze = false;
-
-    Serial.print( "가속도 : "); Serial.println( movespd[1] - movespd[0] ); Serial.println("");
-
-    coor1[0] = coor2[0]; coor1[1] = coor2[1];             //다음을 위한 정리
-    movespd[0] = movespd[1];
-    //==========================================================================스피드보정
+    //==========================================================================스피드보정==============================================================
+    if(coor1[0] != 0 && coor2[0] != 0) { 
+      movespd[1] = sqrt( (coor2[0] - coor1[0])^2 + (coor2[1] - coor1[1])^2 ); 
+      if ( abs( movespd[1] - movespd[0] ) > 0 ) isgraze = true ;
+      else                                      isgraze = false;
+    }else isgraze = false;
     
+    movespd[0] = movespd[1];
+    Serial.println("------------------------------------스피드팩터 디버깅------------------------------------");
+    Serial.print("   coor1 : "); Serial.print(coor1[0]); Serial.print(", "); Serial.println(coor1[1]);
+    Serial.print("   coor2 : "); Serial.print(coor2[0]); Serial.print(", "); Serial.println(coor2[1]);
+    Serial.print(" movespd : "); Serial.print(movespd[0]); Serial.print(" / "); Serial.println(movespd[1]);
+    
+    //==========================================================================스피드보정==============================================================
     int Atob = 0;
     int btoA = 0;
 
     for (int i = 0; i < 884; i++) {
       if(tempValues1[i] == 0) continue;
       else{
-        if(tempValues1[i] - save1[i] ==  2) { Atob ++; }           //후퇴
-        if(tempValues1[i] - save1[i] == -2) { btoA ++; }           //접근  
+        if(swi * (tempValues2[i] - tempValues1[i]) ==  2) { Atob ++; }           //후퇴
+        if(swi * (tempValues2[i] - tempValues1[i]) == -2) { btoA ++; }           //접근  
       }
     }
     epsilon1_2 = epsilon1_1;
     epsilon1_1 = btoA / (Atob + 1 + correction_factor);
-
-    //============================================입실론 디버깅
-    Serial.print("Epsilon1 is : "); Serial.println(epsilon1_1);
-    Serial.print("Epsilon2 is : "); Serial.println(epsilon1_2);
+    Serial.println("====================================Debugging page====================================");
+    Serial.print("Epsilon component : Atob : "); Serial.print(Atob); Serial.print(" / btoA : "); Serial.println(btoA); 
+    Serial.print("       Correction factor : "); Serial.println(correction_factor);
+    Serial.print("             Epsilon1 is : "); Serial.println(epsilon1_1);
+    Serial.print("             Epsilon2 is : "); Serial.println(epsilon1_2);
     Serial.println("");
-
-    Serial.println(correction_factor);
-    //============================================입실론 디버깅
     
     switch (ing) {
       case false :
@@ -160,7 +177,6 @@ void readTempValues() {
                                stat = 1; }
         break;       
     }
-    for(int i = 0; i < 884; i++){ save1[i] = tempValues1[i]; }    //이전 루프 012배열을 save배열에 저장(메모리 때문에 일차원배열에 저장)
 }
 
 void Device_Scan() {

@@ -229,8 +229,7 @@ int MLX90640_GetCurMode(uint8_t slaveAddr)
 }
 
 //------------------------------------------------------------------------------온도가져오는거이거이거이거이거
-
-void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, float *result, int dngtemp, float corfac, int *coordinate)
+void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, int *result, int dngtemp, float corfac, int *coordinate)
 {
     float vdd;
     float ta;
@@ -336,7 +335,7 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
               if(result[loc] == 3) countb --;
               result[loc] = 1;
 
-              coordinatetmploc[pointer] = pixelNumber - (row * 32);
+              coordinatetmploc[pointer] = pixelNumber + 1 - (row * 32);
               pointer++;
               
               if(result[loc - 34] == 0) { result[loc - 34] = 3; countb++; }
@@ -365,9 +364,11 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
       coordinate[1] += coordinatetmp[t][1] * (t+1);
       tmpcount      += coordinatetmp[t][1];
     }
-    coordinate[0] = coordinate[0] / tmpcount;
-    coordinate[1] = coordinate[1] / tmpcount;
-
+    if (tmpcount == 0) { coordinate[0] = 0; coordinate[1] = 0; }
+    else {
+      coordinate[0] = coordinate[0] / tmpcount;
+      coordinate[1] = coordinate[1] / tmpcount;
+    }
     if(countA >= 1){
       float corfac_dec = countb / countA;
       if( 7*pow(countA,0.43) > corfac_dec >= 4*pow(countA,0.5) ) { corfac = 0; }                              //정사각형태
@@ -422,13 +423,9 @@ void MLX90640_GetImage(uint16_t *frameData, const paramsMLX90640 *params, float 
     }
     irDataCP[0] = irDataCP[0] - params->cpOffset[0] * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3));
     if( mode ==  params->calibrationModeEE)
-    {
-        irDataCP[1] = irDataCP[1] - params->cpOffset[1] * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3));
-    }
+    { irDataCP[1] = irDataCP[1] - params->cpOffset[1] * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3)); }
     else
-    {
-      irDataCP[1] = irDataCP[1] - (params->cpOffset[1] + params->ilChessC[0]) * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3));
-    }
+    { irDataCP[1] = irDataCP[1] - (params->cpOffset[1] + params->ilChessC[0]) * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3)); }
 
     for( int pixelNumber = 0; pixelNumber < 768; pixelNumber++)
     {
