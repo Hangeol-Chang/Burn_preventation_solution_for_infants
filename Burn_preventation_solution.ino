@@ -68,8 +68,7 @@ void loop(void) {
     case 0:         //위험판단 실행
       Serial.println("====================================loop start====================================");
       readTempValues();
-      Serial.println("////////////////////////////////////=loop end=////////////////////////////////////");
-      Serial.print("\n \n \n");
+      Serial.println("////////////////////////////////////=loop end=//////////////////////////////////// \n \n \n");
       delay(300);
       break;
       
@@ -125,26 +124,47 @@ void readTempValues() {
     if(swi == 1){
       MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor, coor1);
       swi = -1;
+
+      Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera===============================");
+      for (int i = 0; i < 884; i++) {
+        if (((i % 34) == 0) && (i != 0)) {
+          Serial.println(" ");
+        }
+        Serial.print((int)tempValues1[i]);
+        Serial.print(" ");
+      }
+      Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera===============================");
     }
     else {
       MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues2, temp, correction_factor, coor2);
       swi = 1;
+      
+      Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera===============================");
+      for (int i = 0; i < 884; i++) {
+        if (((i % 34) == 0) && (i != 0)) {
+          Serial.println(" ");
+        }
+        Serial.print((int)tempValues2[i]);
+        Serial.print(" ");
+      }
+      Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera===============================");
     }
     Serial.println("pass collecting data");
     
+
     //==========================================================================스피드보정==============================================================
     if(coor1[0] != 0 && coor2[0] != 0) { 
       movespd[1] = sqrt( (coor2[0] - coor1[0])^2 + (coor2[1] - coor1[1])^2 ); 
-      if ( abs( movespd[1] - movespd[0] ) > 0 ) isgraze = true ;
-      else                                      isgraze = false;
+      if ( abs( movespd[1] - movespd[0] ) > stdspd ) isgraze = true ;
+      else                                           isgraze = false;
     }else isgraze = false;
     
-    movespd[0] = movespd[1];
     Serial.println("------------------------------------스피드팩터 디버깅------------------------------------");
     Serial.print("   coor1 : "); Serial.print(coor1[0]); Serial.print(", "); Serial.println(coor1[1]);
     Serial.print("   coor2 : "); Serial.print(coor2[0]); Serial.print(", "); Serial.println(coor2[1]);
     Serial.print(" movespd : "); Serial.print(movespd[0]); Serial.print(" / "); Serial.println(movespd[1]);
     
+    movespd[0] = movespd[1];
     //==========================================================================스피드보정==============================================================
     int Atob = 0;
     int btoA = 0;

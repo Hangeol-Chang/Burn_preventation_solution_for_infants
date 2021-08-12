@@ -327,10 +327,13 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
 
             // To가 온도
             To = sqrt(sqrt(irData / (alphaCompensated * alphaCorrR[range] * (1 + params->ksTo[range] * (To - params->ct[range]))) + taTr)) - 273.15;
-            
+
+            for (int t = 0; i < 34; i++) { result[t]    = 0; result[t+849]     = 0; }
+            for (int t = 1; i < 25; i++) { result[t*34] = 0; result[t*34 + 33] = 0; }
             loc = (2 * (pixelNumber) / 32) + pixelNumber + 35;
 
-            if ( To >= dngtemp ) {                                          //Ab갯수 세는거까지 추가, 중심잡는거 추가
+            if ( To < dngtemp) result[loc] = 0;
+            else {                                          //Ab갯수 세는거까지 추가, 중심잡는거 추가
               countA ++;
               if(result[loc] == 3) countb --;
               result[loc] = 1;
@@ -342,16 +345,22 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
               if(result[loc + 34] == 0) { result[loc + 34] = 3; countb++; }
               if(result[loc - 1 ] == 0) { result[loc - 1 ] = 3; countb++; }
               if(result[loc + 1 ] == 0) { result[loc + 1 ] = 3; countb++; }
-            }       
+            } 
+
             if( (pixelNumber + 1) % 32 == 0) { 
               if(pointer != 0) {
                 int tmpsum = 0;
-                for (int t = 0; t < pointer;t++){
-                  tmpsum += coordinatetmploc[t] + 1;
-                  //coordinatetmploc[t] = 0;
+                for (int t = 0; t < pointer; t++){
+                  tmpsum += coordinatetmploc[t];
                 }
                 coordinatetmp[row][0] = tmpsum;
                 coordinatetmp[row][1] = pointer;
+              }
+              else {
+                for (int t = 0; t < 24; t++) {
+                  coordinatetmp[row][0] = 0;
+                  coordinatetmp[row][1] = 0;
+                }
               }
               row++; pointer = 0;
             }
