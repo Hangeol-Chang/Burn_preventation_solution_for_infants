@@ -69,7 +69,7 @@ void loop(void) {
       Serial.println("====================================loop start====================================");
       readTempValues();
       Serial.println("////////////////////////////////////=loop end=//////////////////////////////////// \n \n \n");
-      delay(300);
+      delay(1000);
       break;
       
     case 1:         //위험신호(ON), 안전신호(OFF)
@@ -113,9 +113,6 @@ int swi = 1;                                     //스위치
 int temp = 35;
 int stdspd = 0;
 
-//for debug
-int coordinatettmp[48];
-
 void readTempValues() {
     uint16_t mlx90640Frame1[834];
     int status1 = MLX90640_GetFrameData(MLX90640_address1[0], mlx90640Frame1);
@@ -125,7 +122,7 @@ void readTempValues() {
     float tr1 = Ta1 - TA_SHIFT;
 
     if(swi == 1){
-      MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor, coor1, coordinatettmp);
+      MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues1, temp, correction_factor, coor1);
       swi = -1;
 
       Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera===============================");
@@ -139,7 +136,7 @@ void readTempValues() {
       Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera===============================");
     }
     else {
-      MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues2, temp, correction_factor, coor2, coordinatettmp);
+      MLX90640_CalculateTo(mlx90640Frame1, &mlx90640, EMMISIVITY, tr1, tempValues2, temp, correction_factor, coor2);
       swi = 1;
       
       Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera===============================");
@@ -152,13 +149,6 @@ void readTempValues() {
       }
       Serial.println("\r\n===========================WaveShare MLX90640 Thermal Camera===============================");
     }
-    Serial.println("좌표계산용");
-    Serial.println("pass collecting data");
-    for (int i = 0; i < 48; i += 2){
-
-      Serial.print(i); Serial.print("  "); Serial.print(coordinatettmp[i + 0]); Serial.print("  "); Serial.println(coordinatettmp[i + 1]);
-    }
-
     //==========================================================================스피드보정==============================================================
     if(coor1[0] != 0 && coor2[0] != 0) { 
       movespd[1] = sqrt( (coor2[0] - coor1[0])^2 + (coor2[1] - coor1[1])^2 ); 

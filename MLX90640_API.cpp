@@ -18,6 +18,8 @@
 #include "MLX90640_API.h"
 #include <math.h>
 
+#include "Arduino.h"        //디버깅용으로 가져옴. 실제에서 지울 것.
+
 void ExtractVDDParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
 void ExtractPTATParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
 void ExtractGainParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
@@ -229,35 +231,18 @@ int MLX90640_GetCurMode(uint8_t slaveAddr)
 }
 
 //------------------------------------------------------------------------------온도가져오는거이거이거이거이거
-void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, int *result, int dngtemp, float corfac, int *coordinate, int *coordinatetmp)
+void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, int *result, int dngtemp, float corfac, int *coordinate)
 {
-    float vdd;
-    float ta;
-    float ta4;
-    float tr4;
-    float taTr;
-    float gain;
-    float irDataCP[2];
-    float irData;
-    float alphaCompensated;
-    uint8_t mode;
-    int8_t ilPattern;
-    int8_t chessPattern;
-    int8_t pattern;
-    int8_t conversionPattern;
-    float Sx;
-    float To;
-    float alphaCorrR[4];
-    int8_t range;
+    float vdd;                      float ta;                           float ta4;
+    float tr4;                      float taTr;                         float gain;
+    float irDataCP[2];              float irData;                       float alphaCompensated;
+    uint8_t mode;                   int8_t ilPattern;                   int8_t chessPattern;
+    int8_t pattern;                 int8_t conversionPattern;           float Sx;
+    float To;                       float alphaCorrR[4];                int8_t range;
     uint16_t subPage;
 
-    int loc = 0;
-    float countA = 0;
-    float countb = 0;
-
-    int row = 0;
-    int coordinatetmploc[32];
-    //int coordinatetmp[24][2];
+    int loc = 0;                    float countA = 0;                   float countb = 0;
+    int row = 0;                    int coordinatetmploc[32];           int coordinatetmp[24][2];
     int pointer = 0;
     
     subPage = frameData[833];
@@ -295,15 +280,16 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
 
     for( int pixelNumber = 0; pixelNumber < 768; pixelNumber++)
     {
+        /*
         ilPattern = pixelNumber / 32 - (pixelNumber / 64) * 2; 
         chessPattern = ilPattern ^ (pixelNumber - (pixelNumber/2)*2); 
         conversionPattern = ((pixelNumber + 2) / 4 - (pixelNumber + 3) / 4 + (pixelNumber + 1) / 4 - pixelNumber / 4) * (1 - 2 * ilPattern);
         
         if(mode == 0) { pattern = ilPattern; }
         else { pattern = chessPattern; }               
-        
-        if(pattern == frameData[833])
-        {    
+
+        if(pattern == frameData[833])     //체스패턴 나오는 원인 */
+        {
             irData = frameData[pixelNumber];
             if(irData > 32767) { irData = irData - 65536; }
             irData = irData * gain;
@@ -327,11 +313,13 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
 
             // To가 온도
             To = sqrt(sqrt(irData / (alphaCompensated * alphaCorrR[range] * (1 + params->ksTo[range] * (To - params->ct[range]))) + taTr)) - 273.15;
-
+            
+            Serial.print(pixelNumber); Serial.println(" ");
+            
             for (int t = 0; t < 34; t++) { result[t]    = 0; result[t+849]     = 0; }
             for (int t = 1; t < 25; t++) { result[t*34] = 0; result[t*34 + 33] = 0; }
             loc = (2 * (pixelNumber) / 32) + pixelNumber + 35;
-
+            
             if ( To < dngtemp ) result[loc] = 0;
             else {                                          //Ab갯수 세는거까지 추가, 중심잡는거 추가
               countA ++;
@@ -348,17 +336,18 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
             } 
 
             if( (pixelNumber + 1) % 32 == 0) { 
+              Serial.print(pointer); Serial.print(" ");
               if(pointer != 0) {
                 int tmpsum = 0;
                 for (int t = 0; t < pointer; t++){
                   tmpsum += coordinatetmploc[t];
                 }
-                coordinatetmp[row * 2 + 0] = tmpsum;                    // 각 열에서 열원 위치의 합
-                coordinatetmp[row * 2 + 1] = pointer;                   // 각 열에서 열원의 개수
+                coordinatetmp[row][0] = tmpsum;                    // 각 열에서 열원 위치의 합
+                coordinatetmp[row][1] = pointer;                   // 각 열에서 열원의 개수
               }
               else {
-                coordinatetmp[row * 2 + 0] = 0;
-                coordinatetmp[row * 2 + 1] = 0;
+                coordinatetmp[row][0] = 0;
+                coordinatetmp[row][1] = 0;
               }
               row++; pointer = 0;
             }
@@ -367,15 +356,17 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
     
     int tmpcount = 0;
     for (int t = 0; t < 24; t++){
-      coordinate[0] += coordinatetmp[t * 2 + 0];
-      coordinate[1] += coordinatetmp[t * 2 + 1] * (t+1);
-      tmpcount      += coordinatetmp[t * 2 + 1];
+      coordinate[0] += coordinatetmp[t][0];
+      coordinate[1] += coordinatetmp[t][1] * (t+1);
+      tmpcount      += coordinatetmp[t][1];
     }
     if (tmpcount == 0) { coordinate[0] = 0; coordinate[1] = 0; }
     else {
       coordinate[0] = coordinate[0] / tmpcount;
       coordinate[1] = coordinate[1] / tmpcount;
     }
+
+    Serial.print(countA); Serial.print(" "); Serial.print(countb);
     if(countA >= 1){
       float corfac_dec = countb / countA;
       if( 7*pow(countA,0.43) > corfac_dec >= 4*pow(countA,0.5) ) { corfac = 0; }                              //정사각형태
