@@ -229,7 +229,7 @@ int MLX90640_GetCurMode(uint8_t slaveAddr)
 }
 
 //------------------------------------------------------------------------------온도가져오는거이거이거이거이거
-void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, int *result, int dngtemp, float corfac, int *coordinate)
+void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, int *result, int dngtemp, float corfac, int *coordinate, int *coordinatetmp)
 {
     float vdd;
     float ta;
@@ -257,7 +257,7 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
 
     int row = 0;
     int coordinatetmploc[32];
-    int coordinatetmp[24][2];
+    //int coordinatetmp[24][2];
     int pointer = 0;
     
     subPage = frameData[833];
@@ -328,23 +328,23 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
             // To가 온도
             To = sqrt(sqrt(irData / (alphaCompensated * alphaCorrR[range] * (1 + params->ksTo[range] * (To - params->ct[range]))) + taTr)) - 273.15;
 
-            for (int t = 0; i < 34; i++) { result[t]    = 0; result[t+849]     = 0; }
-            for (int t = 1; i < 25; i++) { result[t*34] = 0; result[t*34 + 33] = 0; }
+            for (int t = 0; t < 34; t++) { result[t]    = 0; result[t+849]     = 0; }
+            for (int t = 1; t < 25; t++) { result[t*34] = 0; result[t*34 + 33] = 0; }
             loc = (2 * (pixelNumber) / 32) + pixelNumber + 35;
 
-            if ( To < dngtemp) result[loc] = 0;
+            if ( To < dngtemp ) result[loc] = 0;
             else {                                          //Ab갯수 세는거까지 추가, 중심잡는거 추가
               countA ++;
               if(result[loc] == 3) countb --;
               result[loc] = 1;
 
-              coordinatetmploc[pointer] = pixelNumber + 1 - (row * 32);
+              coordinatetmploc[pointer] = (pixelNumber + 1) % 32;
               pointer++;
               
-              if(result[loc - 34] == 0) { result[loc - 34] = 3; countb++; }
-              if(result[loc + 34] == 0) { result[loc + 34] = 3; countb++; }
-              if(result[loc - 1 ] == 0) { result[loc - 1 ] = 3; countb++; }
-              if(result[loc + 1 ] == 0) { result[loc + 1 ] = 3; countb++; }
+              if(result[loc - 34] == 0 || result[loc - 34] == 3) { result[loc - 34] = 3; countb++; }
+              if(result[loc + 34] == 0 || result[loc + 34] == 3) { result[loc + 34] = 3; countb++; }
+              if(result[loc - 1 ] == 0 || result[loc - 1 ] == 3) { result[loc - 1 ] = 3; countb++; }
+              if(result[loc + 1 ] == 0 || result[loc + 1 ] == 3) { result[loc + 1 ] = 3; countb++; }
             } 
 
             if( (pixelNumber + 1) % 32 == 0) { 
@@ -353,14 +353,12 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
                 for (int t = 0; t < pointer; t++){
                   tmpsum += coordinatetmploc[t];
                 }
-                coordinatetmp[row][0] = tmpsum;
-                coordinatetmp[row][1] = pointer;
+                coordinatetmp[row * 2 + 0] = tmpsum;                    // 각 열에서 열원 위치의 합
+                coordinatetmp[row * 2 + 1] = pointer;                   // 각 열에서 열원의 개수
               }
               else {
-                for (int t = 0; t < 24; t++) {
-                  coordinatetmp[row][0] = 0;
-                  coordinatetmp[row][1] = 0;
-                }
+                coordinatetmp[row * 2 + 0] = 0;
+                coordinatetmp[row * 2 + 1] = 0;
               }
               row++; pointer = 0;
             }
@@ -369,9 +367,9 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
     
     int tmpcount = 0;
     for (int t = 0; t < 24; t++){
-      coordinate[0] += coordinatetmp[t][0];
-      coordinate[1] += coordinatetmp[t][1] * (t+1);
-      tmpcount      += coordinatetmp[t][1];
+      coordinate[0] += coordinatetmp[t * 2 + 0];
+      coordinate[1] += coordinatetmp[t * 2 + 1] * (t+1);
+      tmpcount      += coordinatetmp[t * 2 + 1];
     }
     if (tmpcount == 0) { coordinate[0] = 0; coordinate[1] = 0; }
     else {
