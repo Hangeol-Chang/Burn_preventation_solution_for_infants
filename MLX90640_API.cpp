@@ -231,19 +231,17 @@ int MLX90640_GetCurMode(uint8_t slaveAddr)
 }
 
 //------------------------------------------------------------------------------온도가져오는거이거이거이거이거
-void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, int *result, int dngtemp, float corfac, int *coordinate)
+float MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, float emissivity, float tr, int *result, int dngtemp, int *coordinate)
 {
     float vdd;                      float ta;                           float ta4;
     float tr4;                      float taTr;                         float gain;
     float irDataCP[2];              float irData;                       float alphaCompensated;
-    uint8_t mode;                   int8_t ilPattern;                   int8_t chessPattern;
-    int8_t pattern;                 int8_t conversionPattern;           float Sx;
-    float To;                       float alphaCorrR[4];                int8_t range;
-    uint16_t subPage;
+    uint8_t mode;                   float Sx;                           float To;                       
+    float alphaCorrR[4];            int8_t range;                       uint16_t subPage;
 
     int loc = 0;                    float countA = 0;                   float countb = 0;
     int row = 0;                    int coordinatetmploc[32];           int coordinatetmp[24][2];
-    int pointer = 0;
+    int pointer = 0;                float corfac;
     
     subPage = frameData[833];
     vdd = MLX90640_GetVdd(frameData, params);
@@ -278,6 +276,8 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
     else
     { irDataCP[1] = irDataCP[1] - (params->cpOffset[1] + params->ilChessC[0]) * (1 + params->cpKta * (ta - 25)) * (1 + params->cpKv * (vdd - 3.3)); }
 
+    for (int t = 0; t < 34; t++) { result[t]    = 0; result[t+849]     = 0; }           //테두리 0으로 초기화
+    for (int t = 1; t < 25; t++) { result[t*34] = 0; result[t*34 + 33] = 0; }
     for( int pixelNumber = 0; pixelNumber < 768; pixelNumber++)
     {
         /*
@@ -295,7 +295,7 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
             irData = irData * gain;
             
             irData = irData - params->offset[pixelNumber]*(1 + params->kta[pixelNumber]*(ta - 25))*(1 + params->kv[pixelNumber]*(vdd - 3.3));
-            if(mode !=  params->calibrationModeEE) { irData = irData + params->ilChessC[2] * (2 * ilPattern - 1) - params->ilChessC[1] * conversionPattern; }
+            //if(mode !=  params->calibrationModeEE) { irData = irData + params->ilChessC[2] * (2 * ilPattern - 1) - params->ilChessC[1] * conversionPattern; }
             
             irData = irData / emissivity;
             irData = irData - params->tgc * irDataCP[subPage];
@@ -313,13 +313,14 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
 
             // To가 온도
             To = sqrt(sqrt(irData / (alphaCompensated * alphaCorrR[range] * (1 + params->ksTo[range] * (To - params->ct[range]))) + taTr)) - 273.15;
-            
-            for (int t = 0; t < 34; t++) { result[t]    = 0; result[t+849]     = 0; }
-            for (int t = 1; t < 25; t++) { result[t*34] = 0; result[t*34 + 33] = 0; }
             loc = (2 * (int)((pixelNumber) / 32)) + pixelNumber + 35;
-            
-            if ( To < dngtemp ) result[loc] = 0;
-            else {                                          //Ab갯수 세는거까지 추가, 중심잡는거 추가
+
+            if (To < dngtemp) {
+              if     (result[loc - 1 ] == 1 ) { result[loc] = 3; countb++; }
+              else if(result[loc - 34] == 1 ) { result[loc] = 3; countb++; }
+              else                            { result[loc] = 0; }
+            }
+            else {
               countA ++;
               if(result[loc] == 3) countb --;
               result[loc] = 1;
@@ -327,18 +328,16 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
               coordinatetmploc[pointer] = (pixelNumber + 1) % 32;
               pointer++;
               
-              if(result[loc - 34] == 0 || result[loc - 34] == 3) { result[loc - 34] = 3; countb++; }
-              if(result[loc + 34] == 0 || result[loc + 34] == 3) { result[loc + 34] = 3; countb++; }
-              if(result[loc - 1 ] == 0 || result[loc - 1 ] == 3) { result[loc - 1 ] = 3; countb++; }
-              if(result[loc + 1 ] == 0 || result[loc + 1 ] == 3) { result[loc + 1 ] = 3; countb++; }
+              if(result[loc - 34] == 0 ) { result[loc - 34] = 3; countb++; }
+              if(result[loc - 1 ] == 0 ) { result[loc - 1 ] = 3; countb++; }
             } 
 
-            if( (pixelNumber + 1) % 32 == 0) { 
-              Serial.print(pointer); Serial.print(" ");
+            if((pixelNumber + 1) % 32 == 0) { 
               if(pointer != 0) {
                 int tmpsum = 0;
                 for (int t = 0; t < pointer; t++){
                   tmpsum += coordinatetmploc[t];
+                  //Serial.print(coordinatetmploc[t]); Serial.print(" ");
                 }
                 coordinatetmp[row][0] = tmpsum;                    // 각 열에서 열원 위치의 합
                 coordinatetmp[row][1] = pointer;                   // 각 열에서 열원의 개수
@@ -347,10 +346,13 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
                 coordinatetmp[row][0] = 0;
                 coordinatetmp[row][1] = 0;
               }
+              //Serial.print(coordinatetmp[row][0]); Serial.print(" "); Serial.print(pointer); Serial.println(" ");
               row++; pointer = 0;
             }
         }
     }
+    for (int t = 0; t < 32; t++) { if(result[t+817]     == 1){ result[t+851]     = 3; countb++; } else{ result[t+851]     = 0; }}
+    for (int t = 1; t < 25; t++) { if(result[(t*34)+32] == 1){ result[(t*34)+33] = 3; countb++; } else{ result[(t*34)+33] = 0; }}
     
     int tmpcount = 0;
     for (int t = 0; t < 24; t++){
@@ -364,13 +366,16 @@ void MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, flo
       coordinate[1] = coordinate[1] / tmpcount;
     }
 
-    Serial.print(countA); Serial.print(" "); Serial.print(countb);
+    Serial.print(countA); Serial.print(" "); Serial.println(countb);
+    
     if(countA >= 1){
-      float corfac_dec = countb / countA;
-      if( 7*pow(countA,0.43) > corfac_dec >= 4*pow(countA,0.5) ) { corfac = 0; }                              //정사각형태
-      else if( 10*pow(countA,0.4) > corfac_dec )                 { corfac = pow(corfac_dec,0.25)*0.125; }          //직사각형태
-      else                                                       { corfac = pow(corfac_dec,0.33)*0.16 ; }          //비사각형태
-    }
+      corfac = (float)countb / (float)countA;
+      if( 7*pow(countA,0.43) > corfac >= 4*pow(countA,0.5) ) { Serial.print("비왜곡"); corfac = 0; }                                  //정사각형태
+      else if( 10*pow(countA,0.4) > corfac )                 { Serial.print("저왜곡"); corfac = pow(corfac,0.25)*0.25; }          //직사각형태
+      else                                                   { Serial.print("고왜곡"); corfac = pow(corfac,0.33)*0.3;  }          //비사각형태
+      Serial.print(corfac); Serial.println(" ");
+    }else { corfac = 0; }
+    return corfac;
 }
 
 //------------------------------------------------------------------------------
@@ -429,22 +434,13 @@ void MLX90640_GetImage(uint16_t *frameData, const paramsMLX90640 *params, float 
         chessPattern = ilPattern ^ (pixelNumber - (pixelNumber/2)*2); 
         conversionPattern = ((pixelNumber + 2) / 4 - (pixelNumber + 3) / 4 + (pixelNumber + 1) / 4 - pixelNumber / 4) * (1 - 2 * ilPattern);
         
-        if(mode == 0)
-        {
-          pattern = ilPattern; 
-        }
-        else 
-        {
-          pattern = chessPattern; 
-        }
+        if(mode == 0) { pattern = ilPattern; }
+        else { pattern = chessPattern; }
         
         if(pattern == frameData[833])
         {    
             irData = frameData[pixelNumber];
-            if(irData > 32767)
-            {
-                irData = irData - 65536;
-            }
+            if(irData > 32767) { irData = irData - 65536; }
             irData = irData * gain;
             
             irData = irData - params->offset[pixelNumber]*(1 + params->kta[pixelNumber]*(ta - 25))*(1 + params->kv[pixelNumber]*(vdd - 3.3));
