@@ -18,7 +18,7 @@ int stat = 0;
 bool ing = false;
 
 const char* ssid = "AndroidHotspot1867";       // 공백없이 정확히 넣어야 해요.
-const char* password = "01051781867";   // 공백없이 정확히 넣어야 해요.
+const char* password = "01051781867";          // 공백없이 정확히 넣어야 해요.
 
 int status_wifi = WL_IDLE_STATUS; 
 WiFiServer server(80); 
