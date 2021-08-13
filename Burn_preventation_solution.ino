@@ -27,7 +27,7 @@ WiFiClient client;
 
 void setup() {
     Serial.begin(115200);
-    /*
+    
     //=================================================wifi
     while (status_wifi != WL_CONNECTED) { 
       status_wifi = WiFi.begin(ssid, password); 
@@ -41,7 +41,7 @@ void setup() {
     Serial.println("new client"); 
     while(!client.available()){ delay(1); }                   // 클라이언트로부터 데이터 수신을 기다림
     //=================================================wifi
-    */
+    
     
     Wire.begin();
     Wire.setClock(400000);
@@ -73,7 +73,7 @@ void loop(void) {
       break;
       
     case 1:         //위험신호(ON), 안전신호(OFF)
-    /*
+    
       //================================================================wifi
       String s = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n<html>\r\n"; 
       s += (ing)? "OFF": "ON";      // vall의 값이 참이면('0'아닌 값은 모두 참) 'ON'저장, 거짓이면'OFF'저장
@@ -87,7 +87,7 @@ void loop(void) {
       while (!client.available()){ delay(1); }
       Serial.println("new client");
       //================================================================wifi
-      */
+      
       
       delay(1);
       if (ing) ing = false;

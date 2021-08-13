@@ -1,10 +1,7 @@
 #include "DFRobotDFPlayerMini.h"
 #include "wiring_private.h"
-
-//=======================================wifi
 #include <SPI.h> 
 #include <WiFiNINA.h>
-//=======================================wifi
 
 // Create the DFPlayer Mini object.
 DFRobotDFPlayerMini myDFPlayer;
@@ -17,26 +14,13 @@ const char* ssid = "AndroidHotspot1867";       // 공백없이 정확히 넣어�
 const char* password = "01051781867";          // 공백없이 정확히 넣어야 해요.
 
 int musicnum;
+bool playing;
 
 void setup()
 {
   Serial1.begin(9600);  
   while(!myDFPlayer.begin(Serial1)){ Serial.println("Not Connected!"); }  
   Serial.println("DFPlayer Connected!!!");  
-
-  //=================================================wifi
-  while (status_wifi != WL_CONNECTED) { 
-      status_wifi = WiFi.begin(ssid, password); 
-      delay(1000);       
-      Serial.println("try to connect wifi");
-      server.begin(); 
-    }
-    Serial.println("wifi connected");
-
-    while (!client) { client = server.available(); }
-    Serial.println("new client"); 
-    while(!client.available()){ delay(1); }                   // 클라이언트로부터 데이터 수신을 기다림
-    //=================================================wifi
 
   //=================================================speaker setting
   myDFPlayer.setTimeOut(500); //Set serial communictaion time out 500ms
@@ -47,34 +31,39 @@ void setup()
   // Set the SD Card as default source.
   myDFPlayer.outputDevice(DFPLAYER_DEVICE_SD);
   //=================================================speaker setting
-}
 
+  //=================================================wifi
+  while (status_wifi != WL_CONNECTED) { 
+      status_wifi = WiFi.begin(ssid, password); 
+      delay(1000);       
+      Serial.println("try to connect wifi");
+      server.begin(); 
+    }
+    Serial.println("wifi connected");
+    //=================================================wifi
+}
 
 void loop()
 { 
+  while (!client) { client = server.available(); } //데이터 수신 대기
+  Serial.println("new client"); 
+  while(!client.available()){ delay(1); }  
+
   String req = client.readStringUntil('\r');
   Serial.println(req);
-  client.flush();
-  
-  //=================================================앱 버튼으로 노래 고르기 
-  if (req.indexOf("music1")!=-1){
-    musicnum=1;
-  }
-  if (req.indexOf("music2")!=-1){
-    musicnum=2;
-  }
-  //=================================================앱 버튼으로 노래 고르기 
   
 
-  //=================================================경고 신호 수신 시 안전 신호 발생할때까지 고른 노래를 0~1초까지 반복 재생  
-  while (req.indexOf("/warning/")!=-1) {
-    myDFPlayer.play(musicnum);
-    delay(1000);           
+  switch (playing){
+    case false:
+      if (req.indexOf("/warning/")!= -1)   { myDFPlayer.play(musicnum); playing = true; break; }    //노래 재생
+      else if (req.indexOf("/music1/")!= -1){ musicnum=1; }       // 노래 고르기
+      else if (req.indexOf("/music2/")!= -1){ musicnum=2; }
+    
+      break;
+    case true:
+      if (req.indexOf("/disappear/")!= -1) { myDFPlayer.stop(); playing = false;} // 노래 멈춤
+      break;
   }
-  //=================================================경고 신호 수신 시 안전 신호 발생할때까지 고른 노래를 0~1초까지 반복 재생  
-
-   
-  myDFPlayer.stop(); //이 외에는 노래 중지 
-  
-
+  delay(1000);                  //노래를 끄려면 적어도 1초 뒤에 가능
+  client.stop();                //연결 끊기
 }

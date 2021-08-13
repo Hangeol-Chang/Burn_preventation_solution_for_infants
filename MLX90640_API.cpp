@@ -18,8 +18,6 @@
 #include "MLX90640_API.h"
 #include <math.h>
 
-#include "Arduino.h"        //디버깅용으로 가져옴. 실제에서 지울 것.
-
 void ExtractVDDParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
 void ExtractPTATParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
 void ExtractGainParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
@@ -365,16 +363,13 @@ float MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, fl
       coordinate[0] = coordinate[0] / tmpcount;
       coordinate[1] = coordinate[1] / tmpcount;
     }
-
-    Serial.print(countA); Serial.print(" "); Serial.println(countb);
     
     if(countA >= 1){
       coordinate[2] = countA;
       corfac = (float)countb / (float)countA;
-      if( 7*pow(countA,0.43) > corfac >= 4*pow(countA,0.5) ) { Serial.print("비왜곡"); corfac = 0; }                                  //정사각형태
-      else if( 10*pow(countA,0.4) > corfac )                 { Serial.print("저왜곡"); corfac = pow(corfac,0.25)*0.25; }          //직사각형태
-      else                                                   { Serial.print("고왜곡"); corfac = pow(corfac,0.33)*0.3;  }          //비사각형태
-      Serial.print(corfac); Serial.println(" ");
+      if( 7*pow(countA,0.43) > corfac >= 4*pow(countA,0.5) ) { corfac = 0; }                              //정사각형태
+      else if( 10*pow(countA,0.4) > corfac )                 { corfac = pow(corfac,0.25)*0.25; }          //직사각형태
+      else                                                   { corfac = pow(corfac,0.33)*0.3;  }          //비사각형태
     }else { corfac = 0; coordinate[2] = 0; }
     return corfac;
 }
