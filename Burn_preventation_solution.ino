@@ -88,6 +88,7 @@ void loop(void) {
       Serial.println("new client");
       //================================================================wifi
       
+
       
       delay(1);
       if (ing) ing = false;
@@ -197,7 +198,7 @@ void Device_Scan() {
     byte error, address;
     int nDevices;
     Serial.println("Scanning...");
-    nDevices = 0;
+    nDevices = 0; 
     for (address = 1; address < 127; address++)
     {
         Wire.beginTransmission(address);
