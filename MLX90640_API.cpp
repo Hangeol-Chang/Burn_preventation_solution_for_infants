@@ -364,7 +364,7 @@ float MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, fl
       coordinate[1] = coordinate[1] / tmpcount;
     }
     
-    if(countA >= 1){
+    if(countA >= 3){
       coordinate[2] = countA;
       corfac = (float)countb / (float)countA;
       if( 7*pow(countA,0.43) > corfac >= 4*pow(countA,0.5) ) { corfac = 0; }                              //정사각형태

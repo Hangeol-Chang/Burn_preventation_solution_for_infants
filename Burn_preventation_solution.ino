@@ -69,7 +69,7 @@ void loop(void) {
       Serial.println("====================================loop start====================================");
       readTempValues();
       Serial.println("////////////////////////////////////=loop end=//////////////////////////////////// \n \n \n");
-      delay(1000);
+      delay(500);
       break;
       
     case 1:         //위험신호(ON), 안전신호(OFF)
@@ -185,7 +185,7 @@ void readTempValues() {
         if      (epsilon1_1 >= 3.5) { Serial.println("Warning!");        stat = 1; }
         else if (epsilon1_1 >= 1.5 && epsilon1_2 >= 1.5 && isgraze == false) {
                                       Serial.println("Warning!");        stat = 1; }
-        else if (sizecomp >= 2)   { Serial.println("Warning!");        stat = 1; }
+        else if (10 >= sizecomp >= 2)   { Serial.println("Warning!");        stat = 1; }
         break;    
       case true :
         if(epsilon1_1 < 1 && epsilon1_2 < 1) {
