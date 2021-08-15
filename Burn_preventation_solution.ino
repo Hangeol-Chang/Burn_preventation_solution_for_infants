@@ -69,7 +69,7 @@ void loop(void) {
       Serial.println("====================================loop start====================================");
       readTempValues();
       Serial.println("////////////////////////////////////=loop end=//////////////////////////////////// \n \n \n");
-      delay(500);
+      //delay(000);
       break;
       
     case 1:         //위험신호(ON), 안전신호(OFF)
