@@ -17,7 +17,6 @@
 #include "MLX90640_I2C_Driver.h"
 #include "MLX90640_API.h"
 #include <math.h>
-#include "Arduino.h"
 
 void ExtractVDDParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
 void ExtractPTATParameters(uint16_t *eeData, paramsMLX90640 *mlx90640);
@@ -349,7 +348,6 @@ float MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, fl
               row++; pointer = 0;
             }
         }
-        delay(1);
     }
     for (int t = 0; t < 32; t++) { if(result[t+817]     == 1){ result[t+851]     = 3; countb++; } else{ result[t+851]     = 0; }}
     for (int t = 1; t < 25; t++) { if(result[(t*34)+32] == 1){ result[(t*34)+33] = 3; countb++; } else{ result[(t*34)+33] = 0; }}
@@ -366,7 +364,7 @@ float MLX90640_CalculateTo(uint16_t *frameData, const paramsMLX90640 *params, fl
       coordinate[1] = coordinate[1] / tmpcount;
     }
     
-    if(countA >= 3){
+    if(countA >= 1){
       coordinate[2] = countA;
       corfac = (float)countb / (float)countA;
       if( 7*pow(countA,0.43) > corfac >= 4*pow(countA,0.5) ) { corfac = 0; }                              //정사각형태

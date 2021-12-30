@@ -66,10 +66,10 @@ void setup() {
 void loop(void) {
   switch (stat){
     case 0:         //위험판단 실행
+      //delay(200);
       Serial.println("====================================loop start====================================");
       readTempValues();
       Serial.println("////////////////////////////////////=loop end=//////////////////////////////////// \n \n \n");
-      //delay(000);
       break;
       
     case 1:         //위험신호(ON), 안전신호(OFF)
@@ -167,6 +167,7 @@ void readTempValues() {
       }
     }
     epsilon1_2 = epsilon1_1;
+    correction_factor = 0;
     epsilon1_1 = btoA / (Atob + 1 + correction_factor);
 
     if(swi == 1) { if(coor1[2] == 0) { sizecomp = 0; } else { sizecomp = (float)coor2[2] / (float)coor1[2]; }}
@@ -183,12 +184,12 @@ void readTempValues() {
     switch (ing) {
       case false :
         if      (epsilon1_1 >= 3.5) { Serial.println("Warning!");        stat = 1; }
-        else if (epsilon1_1 >= 1.5 && epsilon1_2 >= 1.5 && isgraze == false) {
+        else if (epsilon1_1 >= 0.5 && epsilon1_2 >= 0.5&& isgraze == false) {
                                       Serial.println("Warning!");        stat = 1; }
-        else if (10 >= sizecomp >= 2)   { Serial.println("Warning!");        stat = 1; }
+        else if (19 >= sizecomp >= 2)   { Serial.println("Warning!");        stat = 1; }
         break;    
       case true :
-        if(epsilon1_1 < 1 && epsilon1_2 < 1) {
+        if(epsilon1_1 < 0.8 && epsilon1_2 < 0.8) {
                                       Serial.println("Dager disappear"); stat = 1; }
         break;       
     }
